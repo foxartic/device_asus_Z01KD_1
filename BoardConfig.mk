@@ -1,4 +1,4 @@
-DEVICE_PATH := device/asus/Z01KD_1D_1
+DEVICE_PATH := device/asus/Z01KD_1
 BOARD_VENDOR := asus
 
 
