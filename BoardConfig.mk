@@ -1,0 +1,101 @@
+DEVICE_PATH := device/asus/Z01KD_1D_1
+BOARD_VENDOR := asus
+
+
+TARGET_OTA_ASSERT_DEVICE := ASUS_Z01KD_1D,Z01KD_1D,Z01KD_1,ASUS_Z01KD_1D_1
+
+#ROM-HACKS
+#BUILD_BROKEN_DUP_RULES := true
+
+#ARCHITECTURE
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_ABI2 :=
+TARGET_CPU_VARIANT := generic 
+
+TARGET_2ND_ARCH := arm
+TARGET_2ND_ARCH_VARIANT := armv8-a
+TARGET_2ND_CPU_ABI := armeabi-v7a
+TARGET_2ND_CPU_ABI2 := armeabi
+TARGET_2ND_CPU_VARIANT := generic
+
+#BOARD SEPOLICY
+BOARD_SEPOLICY_VERS=30.0
+
+#BOOTLOADER 
+TARGET_BOOTLOADER_BOARD_NAME := Z01KD_1
+TARGET_NO_BOOTLOADER := true
+
+# Boot animation
+TARGET_SCREEN_HEIGHT := 1080
+TARGET_SCREEN_WIDTH := 1920
+
+#FSTAB
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom 
+
+# HIDL
+DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
+DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
+
+## Architecture
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_ABI2 :=
+TARGET_CPU_VARIANT := generic
+TARGET_CPU_SMP := true
+
+TARGET_2ND_ARCH := arm
+TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+TARGET_2ND_CPU_ABI := armeabi-v7a
+TARGET_2ND_CPU_ABI2 := armeabi
+TARGET_2ND_CPU_VARIANT := generic
+
+# Kernel
+BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8
+BOARD_KERNEL_CMDLINE += androidboot.console=ttyMSM0 androidboot.hardware=qcom
+BOARD_KERNEL_CMDLINE += androidboot.configfs=true androidboot.usbcontroller=a800000.dwc3
+BOARD_KERNEL_CMDLINE += earlycon=msm_serial_dm,0xc170000 msm_rtb.filter=0x37 ehci-hcd.park=3
+BOARD_KERNEL_CMDLINE += sched_enable_hmp=1 sched_enable_power_aware=1
+BOARD_KERNEL_CMDLINE += lpm_levels.sleep_disabled=1 service_locator.enable=1 swiotlb=1
+BOARD_KERNEL_CMDLINE += user_debug=31 androidboot.selinux=permissive
+BOARD_KERNEL_BASE := 0x00000000
+BOARD_KERNEL_PAGESIZE := 4096
+BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000
+
+BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
+TARGET_KERNEL_ARCH := arm64
+TARGET_KERNEL_CONFIG := ze554kl-user_defconfig
+TARGET_KERNEL_SOURCE := kernel/asus/Z01KD_1
+# Only when you don't have the source
+# TARGET_PREBUILT_KERNEL := device/asus/Z01KD_1/kernel
+
+#PARTITION
+# Partitions - Boot
+BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
+BOARD_FLASH_BLOCK_SIZE := 262144
+
+# Partitions - Cache
+BOARD_CACHEIMAGE_PARTITION_SIZE := 134217728
+BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
+
+# Partitions - Recovery
+BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
+
+# Partitions - System
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 4831838208
+BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
+
+# Partitions - Userdata
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 56465112576
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
+
+#PLATFORM
+TARGET_BOARD_PLATFORM := sdm660
+TARGET_BOARD_PLATFORM_GPU := qcom-adreno512
+
+#VINTF
+PRODUCT_ENFORCE_VINTF_MANIFEST=false
+
+-include vendor/asus/Z01KD_1/BoardConfigVendor.mk
