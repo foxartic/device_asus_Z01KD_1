@@ -6,10 +6,10 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/lineage_Z01KD_1.mk
+    $(LOCAL_DIR)/lineage_Z01K.mk
     
     
 COMMON_LUNCH_CHOICES := \
-    lineage_Z01KD_1-user \
-    lineage_Z01KD_1-userdebug \
-    lineage_Z01KD_1-eng
+    lineage_Z01K-user \
+    lineage_Z01K-userdebug \
+    lineage_Z01K-eng

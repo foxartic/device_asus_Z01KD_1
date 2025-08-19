@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 set -e
-DEVICE=Z01KD_1
+DEVICE=Z01K
 VENDOR=asus
 INITIAL_COPYRIGHT_YEAR=2024
 # Load extract_utils and do some sanity checks
