@@ -1,0 +1,24 @@
+
+on fs
+    chown system root /dev/goodix_fp
+    chmod 0760 /dev/goodix_fp
+
+on post-fs
+
+on post-fs-data
+    
+#ASUS_BSP+++: add for fingerprint
+service gx_fpd /system/vendor/bin/gxFpDaemon
+    class late_start
+    group system
+    user system
+#ASUS_BSP---: add for fingerprint
+
+service fpver /vendor/bin/sh /system/vendor/etc/fpver.sh
+    class core
+    oneshot
+    disabled
+    
+on property:goodix.fp.service.ready=1
+    start fpver
+

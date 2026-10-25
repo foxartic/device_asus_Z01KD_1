@@ -1,0 +1,87 @@
+# init.target.rc - ZE554KL / Z01KD_1
+#
+# Provides the 'fs' stage work that AOSP init.rc only *triggers* and expects
+# the device rc to perform ("Mount fstab in init.{$device}.rc by mount_all
+# command"). Modelled on the stock ASUS ramdisk's init.target.rc.
+
+on early-init
+    mkdir /firmware 0771 system system
+    mkdir /bt_firmware 0771 system system
+    mkdir /dsp 0771 media media
+    mkdir /persist 0771 system system
+
+on fs
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+
+    # Mounts /system, /data, /cache (/persist moved below, out of fstab).
+    # Runs import_late afterwards, which loads /system/etc/init + /vendor/etc/init.
+    mount_all /fstab.qcom
+    swapon_all /fstab.qcom
+
+    # Mount /persist explicitly (as stock does) so a failure here is NON-FATAL
+    # and cannot poison mount_all's error_count (which aborts the late-start
+    # class and hangs the boot at the logo). Best-effort.
+    wait /dev/block/bootdevice/by-name/persist
+    mount ext4 /dev/block/bootdevice/by-name/persist /persist nosuid nodev noatime barrier=1
+
+    mkdir /storage/sdcard1 0771 system system
+    mkdir /storage/usbotg 0771 system system
+
+    mkdir /persist/data 0700 system system
+    mkdir /persist/bms 0700 root system
+    restorecon_recursive /persist
+
+# --- boot progress breadcrumbs (debug; read from PBRP: ls /cache/bl-*) ---
+on post-fs
+    write /cache/bl-postsfs 1
+    copy /system/build.prop /cache/bl-sys
+
+on post-fs-data
+    write /cache/bl-postsfsdata 1
+
+on zygote-start
+    write /cache/bl-zygote 1
+
+on boot
+    write /cache/bl-boot 1
+
+on nonencrypted
+    write /cache/bl-nonencrypted 1
+
+on encrypt
+    write /cache/bl-encrypt 1
+
+on defaultcrypto
+    write /cache/bl-defaultcrypto 1
+
+on property:ro.crypto.state=*
+    write /cache/bl-cstate ${ro.crypto.state}
+
+on property:ro.crypto.state=encrypted
+    write /cache/bl-encrypted 1
+
+on property:vold.decrypt=trigger_restart_min_framework
+    write /cache/bl-minfw 1
+
+on property:vold.decrypt=trigger_post_fs_data
+    write /cache/bl-postfsdata2 1
+
+on property:sys.boot_completed=1
+    write /cache/bl-booted 1
+
+# --- v4f ground-truth dump (read from PBRP: /cache/mounts.txt, /cache/bl-enforce) ---
+on post-fs
+    copy /proc/mounts /cache/mounts.txt
+    copy /sys/fs/selinux/enforce /cache/bl-enforce
+
+# --- v4g: dump mounts/dmesg/props via shell script (init exec cannot redirect) ---
+on post-fs
+    exec - root root -- /system/bin/sh /sbin/mntdump.sh
+
+# --- v4i: delayed diagnostic dump (runs via late_start, dumps after 30s) ---
+service diag /system/bin/sh /sbin/diag.sh
+    class late_start
+    user root
+    group root
+    oneshot

@@ -1,0 +1,7 @@
+vendor/etc/data/netmgr_config.xml
+vendor/etc/debug_info.sh
+vendor/etc/devcfg_630_tzOn.mbn
+vendor/etc/devcfg_660_tzOn.mbn
+vendor/etc/devconf.json
+vendor/etc/DIT_init.sh
+vendor/etc/drc/drc_cfg_5.1.txt
