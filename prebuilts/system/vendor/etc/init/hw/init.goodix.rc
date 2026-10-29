@@ -6,7 +6,9 @@ on fs
 on post-fs
 
 on post-fs-data
-    
+    setprop persist.asus.fp.wakeup 1
+    setprop persist.sys.fp.navigation 1
+
 #ASUS_BSP+++: add for fingerprint
 service gx_fpd /system/vendor/bin/gxFpDaemon
     class late_start
@@ -19,6 +21,13 @@ service fpver /vendor/bin/sh /system/vendor/etc/fpver.sh
     oneshot
     disabled
     
+on property:init.svc.gx_fpd=restarting
+    # Force a fresh 0->1 transition so the HAL is restarted again on the next daemon start.
+    setprop goodix.fp.service.ready 0
+
 on property:goodix.fp.service.ready=1
     start fpver
+    # The HAL only builds its binder session to gxFpDaemon during goodix_sensor_init();
+    # starting it before the daemon registers fingerprintService leaves enroll() failing.
+    restart fps_hal
 

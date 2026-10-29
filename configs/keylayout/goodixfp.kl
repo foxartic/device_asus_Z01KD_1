@@ -1,8 +1,6 @@
-key 187    HOME                     VIRTUAL
-key 188    HOME                     VIRTUAL
-key 189    FINGERPRINT_SWIPE_LEFT   GESTURE
-key 190    FINGERPRINT_SWIPE_RIGHT  GESTURE
-key 191    HOME                     VIRTUAL
-key 192    FINGERPRINT_EARLYWAKEUP  GESTURE
-key 193    FINGERPRINT_LONGPRESS    GESTURE
-key 102    HOME                     VIRTUAL
+# Android 10 has no FINGERPRINT_SWIPE/EARLYWAKEUP/LONGPRESS key labels, and a kl
+# naming an unknown label fails to parse, which drops the device back to Generic.kl.
+key 102    HOME    VIRTUAL
+key 187    HOME    VIRTUAL
+key 188    HOME    VIRTUAL
+key 191    HOME    VIRTUAL

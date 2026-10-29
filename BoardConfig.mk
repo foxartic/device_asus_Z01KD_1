@@ -67,10 +67,6 @@ TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_SOURCE := kernel/asus/Z01KD_1
 TARGET_KERNEL_CONFIG := ze554kl-user-sdm660-perf_defconfig
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
-
-# Use prebuilt kernel
-#TARGET_PREBUILT_KERNEL := device/asus/Z01KD_1/zImage
-#BOARD_KERNEL_IMAGE_NAME := zImage
 export ANDROID_COMPILE_WITH_JACK=false
 
 # Partitions
@@ -78,7 +74,8 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 67108864
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 3221225472
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 58846064640
-BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456
+BOARD_CACHEIMAGE_PARTITION_SIZE := 134217728
+BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_PERSISTIMAGE_PARTITION_SIZE := 33554432
 BOARD_SYSTEMIMAGE_PARTITION_TYPE := ext4
 BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
@@ -89,8 +86,7 @@ TARGET_COPY_OUT_VENDOR := system/vendor
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
 
-# SELinux
-BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy
+# SELinux: the port boots permissive and ships no device sepolicy of its own
 
 # Treble
 BOARD_VNDK_VERSION := current
@@ -98,6 +94,11 @@ BOARD_VNDK_VERSION := current
 # HIDL
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
+
+# Audio
+# Android 10 dropped the legacy .conf audio policy format; the XML policy
+# (configs/audio/audio_policy_configuration.xml) is the only supported path.
+USE_XML_AUDIO_POLICY_CONF := 1
 
 # WiFi
 # BOARD_WLAN_DEVICE=qcwcn selects the Qualcomm WiFi HAL implementation: it

@@ -1,4 +1,10 @@
     
+# Linker namespace: let the vendor namespace resolve platform libs from
+# /system/lib[64] (the vendor tree is 8.1/10 mixed, /system/lib/vndk-29 is not
+# populated for this non-Treble target).
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/ld.config.29.txt:$(TARGET_COPY_OUT_SYSTEM)/etc/ld.config.29.txt
+
 # Audio
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
@@ -111,7 +117,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.vulkan.compute-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.compute-0.xml \
     frameworks/native/data/etc/android.hardware.vulkan.level-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.level-0.xml \
     frameworks/native/data/etc/android.hardware.vulkan.version-1_0_3.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version-1_0_3.xml \
-    frameworks/native/data/etc/android.hardware.wifi.direct.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.direct.xml \
     frameworks/native/data/etc/android.hardware.wifi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/android.software.sip.voip.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.sip.voip.xml \
     frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml \
@@ -138,7 +143,9 @@ PRODUCT_PACKAGES += \
     init.qcom.rc \
     init.target.rc \
     fstab.qcom \
+    fstab.qcom.ramdisk \
     ueventd.qcom.rc \
+    vendor_rfs_tree \
 
 # Audio: legacy policy manager config + speaker amp/route libs from stock
 PRODUCT_COPY_FILES += \
@@ -188,9 +195,9 @@ PRODUCT_COPY_FILES += \
 # (hardware/qcom/wlan-caf, external/wpa_supplicant_8). The stock 64-bit
 # copies of these are absent from the firmware image, and the CAF modules
 # are gated on BOARD_WLAN_DEVICE/WPA_SUPPLICANT_VERSION in BoardConfig.mk.
-# NOTE: libwcnss_qmi / wcnss_service are intentionally NOT listed - they are
-# gated on TARGET_USES_QCOM_WCNSS_QMI + QCPATH, which this device never sets,
-# so listing them makes the build abort with a missing-module error.
+# libwcnss_qmi and wcnss_service are deliberately not listed: they are gated
+# on TARGET_USES_QCOM_WCNSS_QMI + QCPATH, which this device never sets, so
+# listing them aborts the build with a missing-module error.
 PRODUCT_PACKAGES += \
     libcld80211 \
     lib_driver_cmd_qcwcn \
@@ -200,15 +207,86 @@ PRODUCT_PACKAGES += \
     wpa_supplicant \
 
 
-# ---------------------------------------------------------------------------
-# Live-system bake (2026-10-24)
+# The files below were deployed on the running device while the ROM was
+# debugged. They are prebuilt here because the stock image either ships a
+# library compiled against the Android-8.1 Parcel/binder ABI, or ships no file
+# at all, so a fresh `mka` now produces the verified live system byte for byte.
+# Nothing here depends on an external scratch directory: the generators live in
+# tools/ (parcel_abi.py, patchdeps.py, build_txysys.py, build_audio_shims.sh,
+# mkldcfg.py) and read from this tree plus a built out/.
 #
-# Every blob below was pulled off the running device (PBRP backup of the
-# 15.1-20261019-UNOFFICIAL-Z01KD_1 userdebug build) and is byte-identical to
-# what that build actually runs.  They live in prebuilts/system/<path> and are
+# The audio, gnss and camera entries are 8.1 HAL support libs taken from the
+# stock image (the vendor blob dump is missing 307 files, these among them) and
+# the Android-10 built services that replace the 8.1 monolithic impls.
+# libtxysys.so, libaudiocommon81.so and android.hardware.gnss@18.so are
+# private-SONAME copies so an 8.1 and an Android-10 build of the same library
+# can coexist without overwriting a shared /system/vendor lib.
+# libfp_client.so and hw/fingerprint.default.so have their stack Parcel pairs
+# reflowed to the Android-10 slot size (104 -> 120): the Android-10 libbinder
+# ctor in fps_hal overruns the reply Parcel and trips the stack protector in
+# every Bp* proxy. Regenerate both from the vendor-tree originals with
+# tools/parcel_abi.py (42 and 2 functions). The home key additionally needs
+# configs/keylayout/goodixfp.kl to drop the FINGERPRINT_* labels 10 cannot
+# parse.
+# The deps entries are 8.1-era HAL binaries whose DT_NEEDED on libbase.so was
+# rewritten to the private libbs81.so with tools/patchdeps.py; three come from
+# the vendor tree, the omx service is an Android-10 build product, and the
+# 64-bit libbs81.so has no build rule at all. The halenv entries are the
+# matching /vendor/etc/init overrides, each adding only the LD_LIBRARY_PATH
+# (composer: LD_PRELOAD) line that makes the private copy win over the
+# Android-10 /system one. nfc is the libnfc-nci.conf that the Android-10 NXP
+# stack parses and the build ships none.
+# The matching lines in vendor/asus/Z01KD_1/Z01KD_1-vendor.mk are deleted so the
+# stock blob cannot win the duplicate-destination race in PRODUCT_COPY_FILES.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.audio.common81.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.audio.common81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.audio@2.0.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.audio@2.0.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.audio.effect@2.0.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.audio.effect@2.0.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.soundtrigger@2.0.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.soundtrigger@2.0.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.tv.input@1.0.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.tv.input@1.0.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libbs81.so:$(TARGET_COPY_OUT_VENDOR)/lib/libbs81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libtxysys.so:$(TARGET_COPY_OUT_VENDOR)/lib/libtxysys.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libtxysys.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libtxysys.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libeffectsconfig.so:$(TARGET_COPY_OUT_VENDOR)/lib/libeffectsconfig.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libaudiocommon81.so:$(TARGET_COPY_OUT_VENDOR)/lib/libaudiocommon81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/android.hardware.audio.common@2.0-util.so:$(TARGET_COPY_OUT_VENDOR)/lib/android.hardware.audio.common@2.0-util.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/hw/camera.sdm660.so:$(TARGET_COPY_OUT_VENDOR)/lib/hw/camera.sdm660.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/hw/android.hardware.camera.provider@2.4-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib/hw/android.hardware.camera.provider@2.4-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/android.hardware.gnss@18.so:$(TARGET_COPY_OUT_VENDOR)/lib64/android.hardware.gnss@18.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/vendor.qti.gnss@1.0_vendor.so:$(TARGET_COPY_OUT_VENDOR)/lib64/vendor.qti.gnss@1.0_vendor.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.gnss@1.0-impl-qti.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.gnss@1.0-impl-qti.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libfp_client.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libfp_client.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/fingerprint.default.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/fingerprint.default.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.camera.provider@2.4-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.camera.provider@2.4-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/bin/android.hardware.audio@2.0-service:$(TARGET_COPY_OUT_VENDOR)/bin/hw/android.hardware.audio@2.0-service \
+    $(LOCAL_PATH)/prebuilts/livepatch/bin/android.hardware.audio@2.0-service:$(TARGET_COPY_OUT_VENDOR)/bin/legacy/android.hardware.audio@2.0-service \
+    $(LOCAL_PATH)/prebuilts/livepatch/bin/vendor.qti.gnss@1.0-service:$(TARGET_COPY_OUT_VENDOR)/bin/hw/vendor.qti.gnss@1.0-service \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.audio@2.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.audio@2.0-service.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/bin/hw/android.hardware.drm@1.0-service.widevine:$(TARGET_COPY_OUT_VENDOR)/bin/hw/android.hardware.drm@1.0-service.widevine \
+    $(LOCAL_PATH)/prebuilts/livepatch/bin/hw/android.hardware.media.omx@1.0-service:$(TARGET_COPY_OUT_VENDOR)/bin/hw/android.hardware.media.omx@1.0-service \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libbs81.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libbs81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.sensors@1.0-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.sensors@1.0-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.bluetooth@1.0-service-qti.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.bluetooth@1.0-service-qti.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.drm@1.0-service.widevine.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.drm@1.0-service.widevine.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.graphics.composer@2.1-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.graphics.composer@2.1-service.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.media.omx@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.media.omx@1.0-service.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.sensors@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.sensors@1.0-service.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/init/vendor.qti.gnss@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.qti.gnss@1.0-service.rc \
+    $(LOCAL_PATH)/prebuilts/livepatch/etc/libnfc-nci.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nci.conf
+
+# RescueParty reached LEVEL 4 (rebootPromptAndWipeUserData) during the 17.1
+# bring-up boot loops; keeping it disabled is the "never wipe user data" guard.
+# Drop this once the port is stable enough to survive without it.
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.disable_rescue=true
+
+
+# The blobs below were pulled off the running device (PBRP backup of the
+# 15.1-20261019-UNOFFICIAL-Z01KD_1 userdebug build) and are byte-identical to
+# what that build actually runs. They live in prebuilts/system/<path> and are
 # copied to the matching install path so a fresh build reproduces the live
 # system without any manual pushing.
-# ---------------------------------------------------------------------------
 
 # Hardware feature XMLs: the live system carries these in BOTH
 # system/etc/permissions and system/vendor/etc/permissions.  The vendor copy is
@@ -241,9 +319,12 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/system/etc/permissions/android.hardware.vulkan.compute-0.xml:system/etc/permissions/android.hardware.vulkan.compute-0.xml \
     $(LOCAL_PATH)/prebuilts/system/etc/permissions/android.hardware.vulkan.level-0.xml:system/etc/permissions/android.hardware.vulkan.level-0.xml \
     $(LOCAL_PATH)/prebuilts/system/etc/permissions/android.hardware.vulkan.version-1_0_3.xml:system/etc/permissions/android.hardware.vulkan.version-1_0_3.xml \
-    $(LOCAL_PATH)/prebuilts/system/etc/permissions/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
     $(LOCAL_PATH)/prebuilts/system/etc/permissions/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
     $(LOCAL_PATH)/prebuilts/system/etc/permissions/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml
+
+# android.hardware.wifi.direct.xml is deliberately not installed yet:
+# FEATURE_WIFI_DIRECT makes SystemServer start WifiP2pService at boot, which
+# crash-looped while the Wi-Fi HAL stack was being brought up.
 
 # HIDL base library: the live system has android.hidl.base@1.0.so in the
 # plain, vndk and vndk-sp directories of both system/ and vendor/.
@@ -389,6 +470,15 @@ PRODUCT_PROPERTY_OVERRIDES += \
     dalvik.vm.heapminfree=512k \
     dalvik.vm.heapmaxfree=8m \
     qcom.bluetooth.soc=cherokee \
+
+# init.qcom.early_boot.sh only sets ro.opengles.version for msm8937/msm8940 and
+# msm8998, so on this SDM630 nothing ever defined it. ActivityTaskManagerService
+# reads that property into Configuration.reqGlEsVersion, and PackageManager uses
+# the result to match <uses-gl-es>, so every app that asks for GLES 2 or 3 was
+# reported as not installable. The Adreno 508 driver reports OpenGL ES 3.2
+# (dumpsys SurfaceFlinger "GLES:" line), which is 0x30002.
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.opengles.version=196610 \
 
 # Inherit vendor
 $(call inherit-product, vendor/asus/Z01KD_1/Z01KD_1-vendor.mk)

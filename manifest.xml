@@ -301,6 +301,8 @@
             <name>ISupplicant</name>
             <instance>default</instance>
         </interface>
+        <fqname>@1.1::ISupplicant/default</fqname>
+        <fqname>@1.2::ISupplicant/default</fqname>
     </hal>
     <hal format="hidl">
         <name>com.qualcomm.qti.ant</name>

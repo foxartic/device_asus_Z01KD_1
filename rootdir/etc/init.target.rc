@@ -32,7 +32,7 @@ on fs
     mkdir /persist/bms 0700 root system
     restorecon_recursive /persist
 
-# --- boot progress breadcrumbs (debug; read from PBRP: ls /cache/bl-*) ---
+# Boot progress breadcrumbs, readable from PBRP as /cache/bl-*.
 on post-fs
     write /cache/bl-postsfs 1
     copy /system/build.prop /cache/bl-sys
@@ -70,16 +70,18 @@ on property:vold.decrypt=trigger_post_fs_data
 on property:sys.boot_completed=1
     write /cache/bl-booted 1
 
-# --- v4f ground-truth dump (read from PBRP: /cache/mounts.txt, /cache/bl-enforce) ---
+# Ground-truth dump for the v4f boot, read from PBRP as /cache/mounts.txt
+# and /cache/bl-enforce.
 on post-fs
     copy /proc/mounts /cache/mounts.txt
     copy /sys/fs/selinux/enforce /cache/bl-enforce
 
-# --- v4g: dump mounts/dmesg/props via shell script (init exec cannot redirect) ---
+# v4g dumps mounts/dmesg/props through a shell script because init exec
+# cannot redirect.
 on post-fs
     exec - root root -- /system/bin/sh /sbin/mntdump.sh
 
-# --- v4i: delayed diagnostic dump (runs via late_start, dumps after 30s) ---
+# v4i delayed diagnostic dump, run through late_start 30 s after boot.
 service diag /system/bin/sh /sbin/diag.sh
     class late_start
     user root

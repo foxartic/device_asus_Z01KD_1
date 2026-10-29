@@ -371,7 +371,6 @@ fi
 #Since lcd density has read only
 #property, it will not overwrite previous set
 #property if any target is setting forcefully.
-set_density_by_fb
 
 # Setup display nodes & permissions
 # HDMI can be fb1 or fb2

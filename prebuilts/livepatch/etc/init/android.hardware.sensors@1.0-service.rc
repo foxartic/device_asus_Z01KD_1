@@ -1,0 +1,6 @@
+service sensors-hal-1-0 /vendor/bin/hw/android.hardware.sensors@1.0-service
+    environment LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
+    class hal
+    user system
+    group system wakelock input
+    capabilities BLOCK_SUSPEND SYS_NICE

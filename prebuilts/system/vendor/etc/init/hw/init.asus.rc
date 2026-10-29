@@ -56,7 +56,7 @@ on post-fs-data
     chmod 0775 /asusfw
     chown system system /asusfw
 
-# ---- added for Lineage (stock fstab mounts these; our fstab lacks them) ----
+# These come from the stock fstab, which mounts them; our fstab does not.
 # mkdir mount points first (stock init.target.rc does this; Lineage ramdisk lacks them)
     mkdir /firmware 0771 system system
     mkdir /bt_firmware 0771 system system
@@ -75,7 +75,7 @@ on post-fs-data
     mount vfat /dev/block/bootdevice/by-name/bluetooth /bt_firmware ro shortname=lower,uid=1002,gid=3002,dmask=227,fmask=337
 
     setprop firmware_mounts_complete 1
-# ---- end added mounts ----
+
 
 # +++ ASUS_BSP : add for asus boot animation partition
 # mount ADF
@@ -209,7 +209,7 @@ on post-fs-data
 #ASUS_BSP_WIFI --- Reduce wifi power when receiver on
 
 #ASUS_BSP: restore selabel for settings_fingerprint.xml
-    restorecon_force /data/system/users/0/settings_fingerprint.xml
+    restorecon /data/system/users/0/settings_fingerprint.xml
 #ASUS_BSP: restore selabel for settings_fingerprint.xml    
 
 # ASUS Ryder : add for NavigationBar mode switch +++
@@ -308,7 +308,7 @@ service asusgesture /vendor/bin/sh /system/vendor/bin/init.asus.gesture.sh
 
 # for ssn tool
 service ssn /system/vendor/bin/ssn
-    seclabel u:r:asus_ssn:s0
+    seclabel u:r:init:s0
     disabled
     oneshot
 
@@ -347,7 +347,7 @@ service btwifimac /system/vendor/bin/sh /system/vendor/bin/btwifimac.sh
     user root
     group root
     oneshot
-    seclabel u:r:btwifimac:s0
+    seclabel u:r:init:s0
 # ASUS_BSP--- Yunchung "add for bluetooth btwifimac service"
 
 #ASUS_BSP +++ srhuang "sensors init"
@@ -383,7 +383,7 @@ service ins_key /system/vendor/bin/install_key_server
     class late_start
     user root
     group root
-    seclabel u:r:install_key_server:s0
+    seclabel u:r:init:s0
     disabled
 
 service widevine /system/vendor/bin/sh /system/vendor/bin/widevine.sh
@@ -419,4 +419,4 @@ service refreshscreen /system/vendor/bin/ScreenRefresh
     group root
     disabled
     oneshot
-    seclabel u:r:asus_display_splendid:s0
+    seclabel u:r:init:s0

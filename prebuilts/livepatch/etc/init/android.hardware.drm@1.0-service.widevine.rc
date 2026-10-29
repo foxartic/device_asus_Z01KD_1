@@ -1,0 +1,7 @@
+service drm-widevine-hal-1-0 /vendor/bin/hw/android.hardware.drm@1.0-service.widevine
+    environment LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
+    class hal
+    user media
+    group mediadrm drmrpc
+    ioprio rt 4
+    writepid /dev/cpuset/foreground/tasks

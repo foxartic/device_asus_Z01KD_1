@@ -1,0 +1,7 @@
+service hwcomposer-2-1 /vendor/bin/hw/android.hardware.graphics.composer@2.1-service
+    class hal animation
+    user system
+    setenv LD_PRELOAD /system/lib64/libdl_android.so
+    group graphics drmrpc
+    capabilities SYS_NICE
+    onrestart restart surfaceflinger

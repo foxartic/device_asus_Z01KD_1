@@ -133,11 +133,9 @@
             <Limit name="measured-frame-rate-1280x720" range="88-92" />
             <Limit name="measured-frame-rate-1920x1080" range="47-52" />
         </MediaCodec>
-        <MediaCodec name="OMX.google.mpeg4.decoder" update="true">
-            <Type name="video/mp4v-es">
-                <Limit name="measured-frame-rate-176x144" range="380-400" />
-            </Type>
-         </MediaCodec>
+        <MediaCodec name="OMX.google.mpeg4.decoder" type="video/mp4v-es" update="true">
+            <Limit name="measured-frame-rate-176x144" range="380-400" />
+        </MediaCodec>
     </Decoders>
 </MediaCodecs>
 
