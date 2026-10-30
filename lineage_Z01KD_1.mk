@@ -15,6 +15,7 @@ PRODUCT_NAME := lineage_Z01KD_1
 PRODUCT_MODEL := ASUS_Z01KD
 
 PRODUCT_RELEASE_NAME := Z01KD_1
+PRODUCT_SHIPPING_API_LEVEL := 26
 # Ensure packaging/output uses Z01KD_1 instead of any alias
 #PRODUCT_BUILD_PROP_OVERRIDES += \
  #   ro.product.device=Z01KD_1 \
