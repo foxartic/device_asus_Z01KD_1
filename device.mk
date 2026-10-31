@@ -1,4 +1,13 @@
     
+# PRODUCT_SHIPPING_API_LEVEL := 26 in lineage_Z01KD_1.mk makes the build treat
+# this as a full-Treble product, so linkerconfig writes an isolated vendor
+# namespace whose permitted_paths stop at /system/vendor. Every 8.1/10 vendor
+# blob then fails to reach libhidlbase and the graphics interface libraries in
+# /system/lib[64]. TARGET_COPY_OUT_VENDOR is system/vendor, so the Treble split
+# is fiction here; selecting the legacy configuration puts /system and the
+# vendor directory in one non-isolated namespace, as it was on Android 10.
+PRODUCT_FULL_TREBLE_OVERRIDE := false
+
 # Linker namespace: let the vendor namespace resolve platform libs from
 # /system/lib[64] (the vendor tree is 8.1/10 mixed, /system/lib/vndk-29 is not
 # populated for this non-Treble target).
@@ -212,6 +221,24 @@ PRODUCT_PACKAGES += \
     wpa_cli \
     wpa_supplicant \
 
+# The vendor blobs arrive through PRODUCT_COPY_FILES, so the build never learns
+# which HIDL interface libraries their DT_NEEDED entries name. Without these the
+# 1.3 Wi-Fi HAL, the CAS service and ipacm fail to dlopen.
+PRODUCT_PACKAGES += \
+    android.hardware.cas@1.1 \
+    android.hardware.cas@1.2 \
+    android.hardware.tetheroffload.config@1.0 \
+    android.hardware.wifi@1.2 \
+    android.hardware.wifi@1.3
+
+# Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
+# system_server when no such service is registered, so the 1.0 blob alone
+# boot-loops. The 2.1 service is the binderized wrapper around the generic
+# sysfs backend and brings its own VINTF fragment.
+PRODUCT_PACKAGES += \
+    android.hardware.health@2.0-impl-default \
+    android.hardware.health@2.1-service
+
 
 # The files below were deployed on the running device while the ROM was
 # debugged. They are prebuilt here because the stock image either ships a
@@ -280,6 +307,17 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.sensors@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.sensors@1.0-service.rc \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/vendor.qti.gnss@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.qti.gnss@1.0-service.rc \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/libnfc-nci.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nci.conf
+
+# Android 10 merged libhidltransport and libhwbinder into libhidlbase and
+# Android 11 ships only empty stubs for the old names, so every 8.1 vendor HAL
+# that still lists them in DT_NEEDED fails to dlopen. These two shims export
+# nothing and simply pull in libhidlbase, which keeps one HIDL runtime per
+# process. Build them with tools/build_hidl_shims.sh after a full build.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libhidltransport.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libhidltransport.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libhwbinder.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libhwbinder.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libhidltransport.so:$(TARGET_COPY_OUT_VENDOR)/lib/libhidltransport.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libhwbinder.so:$(TARGET_COPY_OUT_VENDOR)/lib/libhwbinder.so
 
 # RescueParty reached LEVEL 4 (rebootPromptAndWipeUserData) during the 17.1
 # bring-up boot loops; keeping it disabled is the "never wipe user data" guard.
