@@ -181,6 +181,13 @@ PRODUCT_PACKAGES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     rild.libpath=/vendor/lib64/libril-qc-qmi-1.so
 
+# 1080x1920 at 401 ppi. Nothing in the tree or in the ASUS blobs sets
+# ro.sf.lcd_density on Android 11 - the old init.qcom.early_boot.sh never
+# reaches its set_density_by_fb helper - so SurfaceFlinger falls back to 160
+# dpi and the framework selects the tablet layout.
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.sf.lcd_density=420
+
 # NFC: NfcNci is never pulled in by the non-Treble product, and the NXP
 # module is installed under its instance name while the AOSP impl loads
 # the default variant
@@ -233,10 +240,11 @@ PRODUCT_PACKAGES += \
 
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
 # system_server when no such service is registered, so the 1.0 blob alone
-# boot-loops. The 2.1 service is the binderized wrapper around the generic
-# sysfs backend and brings its own VINTF fragment.
+# boot-loops. The 2.1 service is the binderized wrapper around the 2.1
+# passthrough impl; the 2.0 -impl-default module is the recovery-only variant
+# and would fail the castFrom in the 2.1 service.
 PRODUCT_PACKAGES += \
-    android.hardware.health@2.0-impl-default \
+    android.hardware.health@2.1-impl \
     android.hardware.health@2.1-service
 
 
