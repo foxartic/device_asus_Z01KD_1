@@ -292,18 +292,14 @@
             <name>IWifi</name>
             <instance>default</instance>
         </interface>
+        <!-- The shipped Wi-Fi HAL registers @1.3, a minor upgrade of 1.0. -->
+        <fqname>@1.3::IWifi/default</fqname>
     </hal>
-    <hal format="hidl">
-        <name>android.hardware.wifi.supplicant</name>
-        <transport>hwbinder</transport>
-        <version>1.0</version>
-        <interface>
-            <name>ISupplicant</name>
-            <instance>default</instance>
-        </interface>
-        <fqname>@1.1::ISupplicant/default</fqname>
-        <fqname>@1.2::ISupplicant/default</fqname>
-    </hal>
+    <!-- The wpa_supplicant built from external/wpa_supplicant_8 registers
+         @1.3::ISupplicant and installs its own fragment in
+         /vendor/etc/vintf/manifest. Declaring the same major version here makes
+         libvintf drop the fragment as a conflict, and a failed merge discards
+         the whole device manifest, so no vendor HAL can register. -->
     <hal format="hidl">
         <name>com.qualcomm.qti.ant</name>
         <transport>hwbinder</transport>
