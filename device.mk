@@ -162,6 +162,12 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     audio.a2dp.default
 
+# Android 11 dropped the gralloc1 path, so SF aborts with "gralloc-mapper is
+# missing" unless a HIDL IMapper passthrough resolves. The 8.1-era blob cannot
+# load: it still needs libhidltransport.so, removed in Android 10.
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.mapper@2.0-impl
+
 # RIL: without this rild takes the no-ril path and never registers IRadio
 PRODUCT_PROPERTY_OVERRIDES += \
     rild.libpath=/vendor/lib64/libril-qc-qmi-1.so
