@@ -1,0 +1,6 @@
+# AOSP only labels the stock android.hardware.{bluetooth,nfc,wifi}@1.x-service
+# names. The ASUS blobs use different file names, so they fall back to
+# vendor_file and init never leaves its own domain for them.
+/(vendor|system/vendor)/bin/hw/android\.hardware\.bluetooth@1\.0-service-qti u:object_r:hal_bluetooth_default_exec:s0
+/(vendor|system/vendor)/bin/hw/vendor\.nxp\.hardware\.nfc@1\.0-service      u:object_r:hal_nfc_default_exec:s0
+/(vendor|system/vendor)/bin/gxFpDaemon                                      u:object_r:gx_fpd_exec:s0

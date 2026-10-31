@@ -1,0 +1,6 @@
+# gxFpDaemon is the Goodix userspace daemon behind the fingerprint HAL, not a
+# HIDL service itself, so it gets a private domain instead of a HAL one.
+type gx_fpd, domain;
+type gx_fpd_exec, exec_type, vendor_file_type, file_type;
+
+init_daemon_domain(gx_fpd)

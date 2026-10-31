@@ -238,6 +238,13 @@ PRODUCT_PACKAGES += \
     android.hardware.wifi@1.2 \
     android.hardware.wifi@1.3
 
+# Every binary in the stock fingerprint stack was linked on Android 8.1 and still
+# lists libunwind.so in DT_NEEDED, although none of them imports an unwind
+# symbol. Android 11 stopped installing that library, so gxFpDaemon dies at exec
+# with "library libunwind.so not found" and the sensor never registers.
+PRODUCT_PACKAGES += \
+    libunwind
+
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
 # system_server when no such service is registered, so the 1.0 blob alone
 # boot-loops. The 2.1 service is the binderized wrapper around the 2.1

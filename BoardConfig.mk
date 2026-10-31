@@ -85,7 +85,9 @@ TARGET_COPY_OUT_VENDOR := system/vendor
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
 
-# SELinux: the port boots permissive and ships no device sepolicy of its own
+# SELinux: the port boots permissive. The policy under sepolicy/vendor adds only
+# the exec labels the ASUS blob names need; AOSP's patterns cover the stock names.
+BOARD_VENDOR_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
 
 # Treble
 BOARD_VNDK_VERSION := current
