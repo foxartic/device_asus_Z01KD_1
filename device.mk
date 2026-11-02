@@ -245,6 +245,43 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libunwind
 
+# The stock media.omx@1.0-service binary is an Android-10 build product: its
+# DT_NEEDED names the vendor variant of the minijail helper, whose SONAME is
+# libavservices_minijail_vendor.so. Android 11 still defines that module in
+# frameworks/av/services/minijail/Android.bp but only installs it when a product
+# asks, so the service exec-fails with "library libavservices_minijail_vendor.so
+# not found" and hwservicemanager keeps asking init for IOmx/default forever.
+PRODUCT_PACKAGES += \
+    libavservices_minijail_vendor
+
+# dpmserviceapp and qcrilmsgtunnel use the Qualcomm DPM/izat classes directly,
+# with no <uses-library> in their manifests, so those jars have to be on the boot
+# classpath. Without it DpmServiceApp.onCreate dies on
+# NoClassDefFoundError: Lcom/qti/location/sdk/IZatManager and the persistent
+# process .dataservices is restarted about six times a second, which also rotates
+# the console log before the icnss boot trace can be read. The modules are
+# Soong java_import in vendor/asus/Z01KD_1/Android.bp because java.mk rejects a
+# PRODUCT_BOOT_JARS entry defined by an Android.mk.
+PRODUCT_BOOT_JARS += \
+    com.qti.dpmframework \
+    com.qti.location.sdk \
+    dpmapi \
+    izat.xt.srv \
+    qcrilhook
+
+# dpmd has the same problem one layer down: libdpmframework.so imports
+# strdup8to16, which Android 11 removed from libcutils, so the daemon exec-fails
+# with "cannot locate symbol strdup8to16" and init restarts it continuously.
+# compat/ rebuilds that single symbol to the contract read out of the Android 9
+# libcutils disassembly. The blob's DT_NEEDED list has no spare entry to point at
+# it, so the stock dpmd.rc is overridden here to preload it, and the vendor/asus
+# line that copied the original has been deleted.
+PRODUCT_PACKAGES += \
+    libdpmcompat
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilts/init/dpmd.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/dpmd.rc
+
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
 # system_server when no such service is registered, so the 1.0 blob alone
 # boot-loops. The 2.1 service is the binderized wrapper around the 2.1

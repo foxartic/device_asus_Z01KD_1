@@ -736,14 +736,22 @@ service amp_unload /system/vendor/bin/amploader -u
     disabled
     oneshot
 
-# Android 10 talks to the supplicant over ISupplicant HIDL, not the wpa ctrl
+# Android 11 talks to the supplicant over ISupplicant HIDL, not the wpa ctrl
 # socket, so the daemon must start interface-less: the framework creates each
 # iface through addInterface() once the vendor Wi-Fi HAL has made wlan0 exist.
 # Pre-binding -ip2p0/-iwlan0 here made the daemon exit before it ever
 # registered, which is why Wi-Fi could not be switched on.
+# The four interface lines mirror
+# external/wpa_supplicant_8/wpa_supplicant/hidl/1.3/android.hardware.wifi.supplicant-service.rc:
+# Android 11's host_init_verifier refuses an init script whose declaration names
+# only the newest version, because HIDL inheritance means registering @1.3 also
+# registers @1.0-@1.2, and it must say so.
 service wpa_supplicant /vendor/bin/hw/wpa_supplicant \
     -O/data/vendor/wifi/wpa/sockets -dd \
     -g@android:wpa_wlan0
+    interface android.hardware.wifi.supplicant@1.0::ISupplicant default
+    interface android.hardware.wifi.supplicant@1.1::ISupplicant default
+    interface android.hardware.wifi.supplicant@1.2::ISupplicant default
     interface android.hardware.wifi.supplicant@1.3::ISupplicant default
     class main
     socket wpa_wlan0 dgram 660 wifi wifi

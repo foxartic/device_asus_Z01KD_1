@@ -1,0 +1,9 @@
+cc_library_shared {
+    name: "libdpmcompat",
+    srcs: ["strdup8to16.cpp"],
+    compile_multilib: "both",
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
