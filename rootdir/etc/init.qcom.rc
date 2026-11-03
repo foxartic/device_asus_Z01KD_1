@@ -1081,8 +1081,13 @@ service modem-check /system/vendor/bin/modem_country
     disabled
     oneshot
 
+# libsettings.so is an 8.1 blob that still references the pre-3.7 protobuf
+# empty_string_ singleton, so rild exec-fails without it preloaded. See
+# compat/protobuf_empty_string.cpp; vendor/etc/init/rild.rc does the same for
+# the first slot.
 service ril-daemon2 /vendor/bin/hw/rild -c 2
     class main
+    setenv LD_PRELOAD /system/vendor/lib64/libprotobufcompat81.so
     socket rild2 stream 660 root radio
     socket rild-debug2 stream 660 radio system
     user radio
@@ -1092,6 +1097,7 @@ service ril-daemon2 /vendor/bin/hw/rild -c 2
 
 service ril-daemon3 /vendor/bin/hw/rild -c 3
     class main
+    setenv LD_PRELOAD /system/vendor/lib64/libprotobufcompat81.so
     socket rild3 stream 660 root radio
     socket rild-debug3 stream 660 radio system
     user radio

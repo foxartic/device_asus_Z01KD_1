@@ -251,8 +251,16 @@ PRODUCT_PACKAGES += \
 # frameworks/av/services/minijail/Android.bp but only installs it when a product
 # asks, so the service exec-fails with "library libavservices_minijail_vendor.so
 # not found" and hwservicemanager keeps asking init for IOmx/default forever.
+# That helper needs libminijail.so in turn, and Android 11 installs only the
+# 64-bit platform copy. /linkerconfig/ld.config.txt puts /system/${LIB} first in
+# the default namespace, so the 32-bit OMX binary looks for
+# /system/lib/libminijail.so, misses, and init restarts the service forever -
+# the stack that hangs mediaserver on MediaCodecList::getLocalInstance() and lets
+# the watchdog kill system_server whenever the UI plays a charging sound.
+# Asking for the module installs both multilib variants.
 PRODUCT_PACKAGES += \
-    libavservices_minijail_vendor
+    libavservices_minijail_vendor \
+    libminijail
 
 # dpmserviceapp and qcrilmsgtunnel use the Qualcomm DPM/izat classes directly,
 # with no <uses-library> in their manifests, so those jars have to be on the boot
@@ -281,6 +289,19 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/init/dpmd.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/dpmd.rc
+
+# The same class of failure one layer further down: the 8.1 libsettings.so, pulled
+# in by libril-qc-qmi-1.so, libril-qc-hal-qmi.so and libqcrilFramework.so, still
+# references protobuf's pre-3.7 empty_string_ singleton. Android 11 ships
+# protobuf 3.9.1, which renamed it, so every rild instance exec-fails at dlopen
+# ("cannot locate symbol \"_ZN6google8protobuf8internal13empty_string_E\"
+# referenced by \"/system/vendor/lib64/libsettings.so\"") and init restarts
+# ril-daemon and ril-daemon2 forever. That also explains qcrilmsgtunnel repeating
+# "keeps stopping": the rild2 socket it dials never comes into existence.
+# compat/protobuf_empty_string.cpp re-exports the one missing object and both rc
+# sites preload it.
+PRODUCT_PACKAGES += \
+    libprotobufcompat81
 
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
 # system_server when no such service is registered, so the 1.0 blob alone

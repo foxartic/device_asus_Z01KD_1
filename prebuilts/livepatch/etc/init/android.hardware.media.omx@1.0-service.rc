@@ -1,5 +1,5 @@
 service vendor.media.omx /vendor/bin/hw/android.hardware.media.omx@1.0-service
-    environment LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
     class main
     user mediacodec
     group camera drmrpc mediadrm

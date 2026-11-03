@@ -7,3 +7,18 @@ cc_library_shared {
         "-Werror",
     ],
 }
+
+// rild cannot dlopen libsettings.so without the pre-3.7 protobuf empty-string
+// singleton, so it goes in a separate library and the RIL services preload it.
+// It has to be a vendor library: the linker namespace of /vendor/bin/hw/rild only
+// accepts paths under system/vendor.
+cc_library_shared {
+    name: "libprotobufcompat81",
+    srcs: ["protobuf_empty_string.cpp"],
+    compile_multilib: "both",
+    vendor: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
