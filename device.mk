@@ -312,6 +312,17 @@ PRODUCT_PACKAGES += \
     android.hardware.health@2.1-impl \
     android.hardware.health@2.1-service
 
+# Android 11's vold takes its global binder mutex in needsCheckpoint() and then
+# calls IBootControl::getService(), which waits for a registration that never
+# happens here. StorageManagerService.start() blocks in connectVold() on the
+# other side of that mutex, so the watchdog kills system_server about every
+# 103 s and the boot animation never finishes. hardware/interfaces/boot/1.1
+# cannot serve this device (BootControl::Init returns false without
+# ro.boot.slot_suffix) and the 1.0 default impl needs a QCOM bootctrl module,
+# so the dt-local hardware/boot service answers the single-slot state instead.
+PRODUCT_PACKAGES += \
+    android.hardware.boot@1.0-service-z01kd
+
 
 # The files below were deployed on the running device while the ROM was
 # debugged. They are prebuilt here because the stock image either ships a

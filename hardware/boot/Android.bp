@@ -1,0 +1,16 @@
+cc_binary {
+    name: "android.hardware.boot@1.0-service-z01kd",
+    vendor: true,
+    relative_install_path: "hw",
+    init_rc: ["android.hardware.boot@1.0-service.rc"],
+    srcs: ["service.cpp"],
+
+    shared_libs: [
+        "libbinder",
+        "libcutils",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+        "android.hardware.boot@1.0",
+    ],
+}

@@ -4,3 +4,9 @@
 /(vendor|system/vendor)/bin/hw/android\.hardware\.bluetooth@1\.0-service-qti u:object_r:hal_bluetooth_default_exec:s0
 /(vendor|system/vendor)/bin/hw/vendor\.nxp\.hardware\.nfc@1\.0-service      u:object_r:hal_nfc_default_exec:s0
 /(vendor|system/vendor)/bin/gxFpDaemon                                      u:object_r:gx_fpd_exec:s0
+
+# AOSP labels only the exact android.hardware.boot@1.x-service file names, so
+# the dt-local bootctl needs its own. Unlabeled it is vendor_file, init execs
+# it without transitioning to hal_bootctl_default, and the missing IBootControl
+# registration leaves vold blocked in needsCheckpoint().
+/(vendor|system/vendor)/bin/hw/android\.hardware\.boot@1\.0-service-z01kd u:object_r:hal_bootctl_default_exec:s0
