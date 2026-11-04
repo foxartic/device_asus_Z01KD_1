@@ -93,15 +93,17 @@
             <instance>default</instance>
         </interface>
     </hal>
-    <hal format="hidl">
-        <name>android.hardware.gnss</name>
-        <transport>hwbinder</transport>
-        <version>1.0</version>
-        <interface>
-            <name>IGnss</name>
-            <instance>default</instance>
-        </interface>
-    </hal>
+    <!-- Declaring IGnss here makes hwservicemanager answer HWBINDER for it, and
+         Android 11's GnssLocationProvider.class_init_native() then waits for a
+         registration on the system_server main thread that never arrives: the
+         only GNSS binary on this device is vendor.qti.gnss@1.0-service, which is
+         labelled vendor_file and has no hwservice context, so it cannot exec or
+         register. Without a registration the wait loop retries forever, the
+         watchdog kills system_server about every 103 s and the device bootloops.
+         With the entry gone the call falls through to the passthrough attempt and
+         returns null, so isSupported() is false and boot continues. Restore this
+         once the QCOM service has a hal_gnss_default_exec label plus an IGnss
+         hwservice context and is proven to register. -->
     <hal format="hidl">
         <name>android.hardware.graphics.allocator</name>
         <transport>hwbinder</transport>
