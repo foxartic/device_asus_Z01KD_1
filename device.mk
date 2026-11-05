@@ -322,16 +322,31 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/init/dpmd.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/dpmd.rc
 
-# The same class of failure one layer further down: the 8.1 libsettings.so, pulled
-# in by libril-qc-qmi-1.so, libril-qc-hal-qmi.so and libqcrilFramework.so, still
-# references protobuf's pre-3.7 empty_string_ singleton. Android 11 ships
-# protobuf 3.9.1, which renamed it, so every rild instance exec-fails at dlopen
-# ("cannot locate symbol \"_ZN6google8protobuf8internal13empty_string_E\"
-# referenced by \"/system/vendor/lib64/libsettings.so\"") and init restarts
-# ril-daemon and ril-daemon2 forever. That also explains qcrilmsgtunnel repeating
-# "keeps stopping": the rild2 socket it dials never comes into existence.
-# compat/protobuf_empty_string.cpp re-exports the one missing object and both rc
-# sites preload it.
+# The same class of failure one layer further down: libsettings.so is an 8.1
+# blob, pulled in by libril-qc-qmi-1.so, libril-qc-hal-qmi.so and
+# libqcrilFramework.so, and it was linked against protobuf 3.6. Android 11
+# ships protobuf 3.9.1, which dropped sixteen of the symbols that blob imports
+# (readelf over the staged image: empty_string_, InitEmptyString,
+# empty_string_once_init_, GoogleOnceInitImpl, UnknownFieldSet, Arena and the
+# GeneratedMessageReflection factory), so every rild instance exits 1 within
+# 45 ms of init starting it and qcrilmsgtunnel keeps dialing a rild2 socket
+# that never exists.
+#
+# The first attempt here was compat/protobuf_empty_string.cpp, which re-exports
+# only empty_string_. That moved the failure one symbol forward, to
+# InitEmptyString, and the linker reports one unresolved symbol per dlopen, so
+# the real fix is the library the blob was linked against. The 3.7.1 build from
+# the Android 10 VNDK snapshot goes under a private file name because
+# /system/lib64/libprotobuf-cpp-full.so is Android 11's 3.9.1 and the legacy
+# linker namespace searches /system/lib64 first; it is preloaded, by path, from
+# rootdir/etc/init.qcom.rc (ril-daemon2/3) and vendor/etc/init/rild.rc.
+# Preloading it alone is enough - verified on device, rild then stays running.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libprotobuf-cpp-full-3.7.1.so:system/vendor/lib64/libprotobuf-cpp-full-3.7.1.so
+
+# The object-only shim stays for the 32-bit side, where the widevine HAL still
+# preloads /system/vendor/lib/libprotobufcompat81.so and no 32-bit copy of the
+# old protobuf has been needed yet.
 PRODUCT_PACKAGES += \
     libprotobufcompat81
 
