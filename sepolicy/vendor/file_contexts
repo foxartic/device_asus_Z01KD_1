@@ -10,3 +10,15 @@
 # it without transitioning to hal_bootctl_default, and the missing IBootControl
 # registration leaves vold blocked in needsCheckpoint().
 /(vendor|system/vendor)/bin/hw/android\.hardware\.boot@1\.0-service-z01kd u:object_r:hal_bootctl_default_exec:s0
+
+# e2fsdroid needs a label for every path in the image, including the six ASUS
+# firmware mountpoints baked at the root. AOSP labels its own root mountpoints
+# (bin, etc, sdcard, charger) rootfs, so they get the same; a mount hides the
+# label at boot. Without this the build dies on
+# "No such file or directory searching for label /asusfw".
+/asusfw(/.*)?      u:object_r:rootfs:s0
+/bt_firmware(/.*)? u:object_r:rootfs:s0
+/dsp(/.*)?         u:object_r:rootfs:s0
+/factory(/.*)?     u:object_r:rootfs:s0
+/firmware(/.*)?    u:object_r:rootfs:s0
+/persist(/.*)?     u:object_r:rootfs:s0
