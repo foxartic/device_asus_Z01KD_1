@@ -1,0 +1,2 @@
+# Placeholder so this directory exists in the system image; /firmware is a
+# mountpoint and hides the file at boot.

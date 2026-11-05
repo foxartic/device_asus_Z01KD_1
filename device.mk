@@ -155,6 +155,7 @@ PRODUCT_PACKAGES += \
     fstab.qcom.ramdisk \
     ueventd.qcom.rc \
     vendor_rfs_tree \
+    root_mount_dirs \
 
 # Audio: legacy policy manager config + speaker amp/route libs from stock
 PRODUCT_COPY_FILES += \

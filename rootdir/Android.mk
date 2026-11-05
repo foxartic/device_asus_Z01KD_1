@@ -75,3 +75,19 @@ LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES    := etc/fstab.qcom
 LOCAL_MODULE_PATH  := $(TARGET_RAMDISK_OUT)
 include $(BUILD_PREBUILT)
+
+# /firmware, /bt_firmware and /dsp hold modem.mdt, the WCN3990 images and the
+# ADSP firmware, and the vendor init.asus.rc mounts all six ASUS partitions onto
+# the root of this image.  Those mkdir calls cannot succeed at boot because / is
+# already mounted read-only by then, so without the directories in the image
+# nothing mounts, the modem subsystem stays OFFLINING, and Wi-Fi, Bluetooth and
+# NFC never get powered.
+include $(CLEAR_VARS)
+LOCAL_MODULE           := root_mount_dirs
+LOCAL_MODULE_TAGS      := optional
+LOCAL_MODULE_CLASS     := ETC
+LOCAL_MODULE_STEM      := .keep
+LOCAL_MODULE_PATH      := $(TARGET_ROOT_OUT)/firmware
+LOCAL_SRC_FILES        := etc/rootdirs.keep
+LOCAL_POST_INSTALL_CMD := sh $(LOCAL_PATH)/etc/mkrootdirs.sh $(TARGET_ROOT_OUT)
+include $(BUILD_PREBUILT)
