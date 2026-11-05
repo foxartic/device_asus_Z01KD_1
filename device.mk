@@ -401,6 +401,13 @@ PRODUCT_PACKAGES += \
 # (composer: LD_PRELOAD) line that makes the private copy win over the
 # Android-10 /system one. nfc is the libnfc-nci.conf that the Android-10 NXP
 # stack parses and the build ships none.
+# keymaster is the same trick for the 8.1 HAL: A11 deleted the keymaster 3.0
+# default implementation, so @3.0-impl.so stays an 8.1 blob, but its two
+# libraries resolve to the A11 /system/lib64 copies. keymaster::
+# AuthorizationSet changed layout between 8.1 and A11, so attestKey faults
+# in AuthorizationSet::Clear on every unlock. libkeymport81.so and
+# libsoftkeym81.so are the 8.1 pair under private sonames and the impl's
+# DT_NEEDED points at them; regenerate with tools/build_km81_shims.py.
 # The matching lines in vendor/asus/Z01KD_1/Z01KD_1-vendor.mk are deleted so the
 # stock blob cannot win the duplicate-destination race in PRODUCT_COPY_FILES.
 PRODUCT_COPY_FILES += \
@@ -432,6 +439,12 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/livepatch/lib64/libbs81.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libbs81.so \
     $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so \
     $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.sensors@1.0-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.sensors@1.0-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/hw/android.hardware.keymaster@3.0-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib/hw/android.hardware.keymaster@3.0-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libkeymport81.so:$(TARGET_COPY_OUT_VENDOR)/lib/libkeymport81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib/libsoftkeym81.so:$(TARGET_COPY_OUT_VENDOR)/lib/libsoftkeym81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/hw/android.hardware.keymaster@3.0-impl.so:$(TARGET_COPY_OUT_VENDOR)/lib64/hw/android.hardware.keymaster@3.0-impl.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libkeymport81.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libkeymport81.so \
+    $(LOCAL_PATH)/prebuilts/livepatch/lib64/libsoftkeym81.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libsoftkeym81.so \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.bluetooth@1.0-service-qti.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.bluetooth@1.0-service-qti.rc \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.drm@1.0-service.widevine.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.drm@1.0-service.widevine.rc \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/android.hardware.graphics.composer@2.1-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.graphics.composer@2.1-service.rc \
