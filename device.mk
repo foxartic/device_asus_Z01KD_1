@@ -298,6 +298,17 @@ PRODUCT_BOOT_JARS += \
     izat.xt.srv \
     qcrilhook
 
+# qcrilmsgtunnel dies at service creation with
+# NoClassDefFoundError: Landroid/hidl/base/V1_0/IBase; (QcrilMsgTunnelIfaceManager
+# .java:73). Android 11 installs android.hidl.base-V1.0-java.jar and
+# android.hidl.manager-V1.0-java.jar but only exposes them through <library> entries
+# in /system/etc/permissions/platform.xml, which reach an app only if that app
+# declares <uses-library>. The 8.0 Qualcomm APK declares nothing, so the classes are
+# invisible to it; Android 8.x had these jars on the boot classpath instead. The
+# device-owned name exists because soong rejects the real module names as framework
+# boot jars - they resolve into the updatable wifi/tethering apexes.
+PRODUCT_BOOT_JARS += device-hidl-java-compat
+
 # dpmd has the same problem one layer down: libdpmframework.so imports
 # strdup8to16, which Android 11 removed from libcutils, so the daemon exec-fails
 # with "cannot locate symbol strdup8to16" and init restarts it continuously.
