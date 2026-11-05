@@ -331,25 +331,25 @@ PRODUCT_COPY_FILES += \
 # empty_string_once_init_, GoogleOnceInitImpl, UnknownFieldSet, Arena and the
 # GeneratedMessageReflection factory), so every rild instance exits 1 within
 # 45 ms of init starting it and qcrilmsgtunnel keeps dialing a rild2 socket
-# that never exists.
+# that never exists. libwvhidl.so and libwvdrmengine.so hit the same wall on the
+# widevine side, with the lite symbol set.
 #
-# The first attempt here was compat/protobuf_empty_string.cpp, which re-exports
-# only empty_string_. That moved the failure one symbol forward, to
-# InitEmptyString, and the linker reports one unresolved symbol per dlopen, so
-# the real fix is the library the blob was linked against. The 3.7.1 build from
-# the Android 10 VNDK snapshot goes under a private file name because
+# LD_PRELOAD cannot carry this: init keeps the first definition it sees of a
+# service and drops later ones, and ril-daemon is defined both by hardware/ril's
+# rild.legacy.rc and by the vendor rild.rc, so which setenv line survives depends
+# on the order that directory happens to be read in - the live process ends up
+# with rild.legacy.rc's, which has no preload at all. The five blobs now import a
+# private name instead: tools/patchdeps.py rewrites their DT_NEEDED to
+# libprotobuf_v37full.so, which only the Android 10 VNDK (protobuf 3.7.1) build
+# answers to. The name has to be private because
 # /system/lib64/libprotobuf-cpp-full.so is Android 11's 3.9.1 and the legacy
-# linker namespace searches /system/lib64 first; it is preloaded, by path, from
-# rootdir/etc/init.qcom.rc (ril-daemon2/3) and vendor/etc/init/rild.rc.
-# Preloading it alone is enough - verified on device, rild then stays running.
+# namespace searches /system/lib64 before /vendor/lib64, so a same-named vendor
+# copy can never win. One library per arch covers both groups, because the full
+# build also exports the lite symbol set. Verified on device with LD_PRELOAD
+# removed everywhere: rild and its second slot stay running and widevine links.
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libprotobuf-cpp-full-3.7.1.so:system/vendor/lib64/libprotobuf-cpp-full-3.7.1.so
-
-# The object-only shim stays for the 32-bit side, where the widevine HAL still
-# preloads /system/vendor/lib/libprotobufcompat81.so and no 32-bit copy of the
-# old protobuf has been needed yet.
-PRODUCT_PACKAGES += \
-    libprotobufcompat81
+    $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libprotobuf_v37full.so:system/vendor/lib64/libprotobuf_v37full.so \
+    $(LOCAL_PATH)/prebuilts/system/vendor/lib/libprotobuf_v37full.so:system/vendor/lib/libprotobuf_v37full.so
 
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
 # system_server when no such service is registered, so the 1.0 blob alone
