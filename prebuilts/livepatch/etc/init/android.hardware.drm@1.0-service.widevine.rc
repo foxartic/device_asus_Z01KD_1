@@ -1,5 +1,4 @@
 service drm-widevine-hal-1-0 /vendor/bin/hw/android.hardware.drm@1.0-service.widevine
-    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
     setenv LD_PRELOAD /system/vendor/lib/libprotobufcompat81.so
     class hal
     user media
