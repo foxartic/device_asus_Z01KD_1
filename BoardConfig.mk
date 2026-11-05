@@ -117,6 +117,11 @@ BOARD_WLAN_DEVICE := qcwcn
 WPA_SUPPLICANT_VERSION := VER_0_8_X
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_qcwcn
+# Deliberately NOT set: WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY would make
+# external/wpa_supplicant_8 install hidl/1.3/android.hardware.wifi.supplicant-
+# service.rc, i.e. a second "service wpa_supplicant" stanza next to the one this
+# device already ships in rootdir/etc/init.qcom.rc (same name, same
+# wpa_wlan0 socket), and init rejects a duplicate service name.
 
 # Inherit from the proprietary version
 -include vendor/asus/Z01KD_1/BoardConfigVendor.mk

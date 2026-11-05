@@ -163,8 +163,7 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/audio/libtfa98xx.so:system/lib/libtfa98xx.so \
     $(LOCAL_PATH)/prebuilts/audio/libtfa98xxrcv.so:system/lib/libtfa98xxrcv.so \
     $(LOCAL_PATH)/prebuilts/audio/lib64/libtfa98xx.so:system/lib64/libtfa98xx.so \
-    $(LOCAL_PATH)/prebuilts/audio/lib64/libtfa98xxrcv.so:system/lib64/libtfa98xxrcv.so \
-    $(LOCAL_PATH)/prebuilts/audio/android.hardware.wifi.supplicant@1.0.so:$(TARGET_COPY_OUT_VENDOR)/lib64/android.hardware.wifi.supplicant@1.0.so
+    $(LOCAL_PATH)/prebuilts/audio/lib64/libtfa98xxrcv.so:system/lib64/libtfa98xxrcv.so
 
 # Audio: A2DP HAL is only pulled in by treble_common.mk, which this
 # non-Treble product never inherits
@@ -237,6 +236,28 @@ PRODUCT_PACKAGES += \
     android.hardware.tetheroffload.config@1.0 \
     android.hardware.wifi@1.2 \
     android.hardware.wifi@1.3
+
+# The Wi-Fi HAL in the vendor blob is an Android 10 binary: it registers IWifi
+# only up to 1.3 and its WifiLegacyHal reads the function table through the 10
+# layout, so handing it the Android 11 libwifi-hal.so leaves its own state
+# inconsistent and it aborts on the first configureChip with
+# "Check failed: global_func_table_.wifi_initialize && !global_handle_ ...".
+# Compiling the HAL here gets Wi-Fi past that point, and @1.4 has to be named
+# because PRODUCT_COPY_FILES never tells the build what a blob's DT_NEEDED wants.
+PRODUCT_PACKAGES += \
+    android.hardware.wifi@1.0-service \
+    android.hardware.wifi@1.4
+
+# wpa_supplicant carries the ISupplicant HAL itself in this release, so its
+# DT_NEEDED list names every supplicant interface version it registers. Only
+# @1.0 ever existed on the vendor partition (as a stock blob), so the loader
+# aborted with "android.hardware.wifi.supplicant@1.1.so not found" before
+# main(), Wi-Fi could never be enabled and the 1.0 Wi-Fi HAL stayed idle.
+PRODUCT_PACKAGES += \
+    android.hardware.wifi.supplicant@1.0 \
+    android.hardware.wifi.supplicant@1.1 \
+    android.hardware.wifi.supplicant@1.2 \
+    android.hardware.wifi.supplicant@1.3
 
 # Every binary in the stock fingerprint stack was linked on Android 8.1 and still
 # lists libunwind.so in DT_NEEDED, although none of them imports an unwind
@@ -515,7 +536,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.radio.deprecated@1.0.so:system/vendor/lib64/android.hardware.radio.deprecated@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.radio@1.0.so:system/vendor/lib64/android.hardware.radio@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.radio@1.1.so:system/vendor/lib64/android.hardware.radio@1.1.so \
-    $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.wifi.supplicant@1.0.so:system/vendor/lib64/android.hardware.wifi.supplicant@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.wifi@1.0.so:system/vendor/lib64/android.hardware.wifi@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hidl.base@1.0.so:system/vendor/lib64/android.hidl.base@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/hw/nfc_nci.default.so:system/vendor/lib64/hw/nfc_nci.default.so \
