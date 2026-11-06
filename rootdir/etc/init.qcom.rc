@@ -743,9 +743,8 @@ service amp_unload /system/vendor/bin/amploader -u
 # registered, which is why Wi-Fi could not be switched on.
 # The four interface lines mirror
 # external/wpa_supplicant_8/wpa_supplicant/hidl/1.3/android.hardware.wifi.supplicant-service.rc:
-# Android 11's host_init_verifier refuses an init script whose declaration names
-# only the newest version, because HIDL inheritance means registering @1.3 also
-# registers @1.0-@1.2, and it must say so.
+# HIDL inheritance means registering @1.3 also registers @1.0-@1.2, and
+# Android 11's host_init_verifier refuses a declaration naming only the newest.
 service wpa_supplicant /vendor/bin/hw/wpa_supplicant \
     -O/data/vendor/wifi/wpa/sockets -dd \
     -g@android:wpa_wlan0
@@ -1083,7 +1082,7 @@ service modem-check /system/vendor/bin/modem_country
 
 # The extra SIM slots are not defined anywhere else, unlike ril-daemon, whose
 # definition in hardware/ril's rild.legacy.rc wins and whose group list lacks
-# oem_2901; see the device.mk comment about libsettings.so.
+# oem_2901; see the libsettings.so note in device.mk.
 service ril-daemon2 /vendor/bin/hw/rild -c 2
     class main
     socket rild2 stream 660 root radio

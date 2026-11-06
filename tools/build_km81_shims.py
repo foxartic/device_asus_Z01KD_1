@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
 """Give the 8.1 keymaster HAL a matching library set.
 
-/system/lib64/libkeymaster_portable.so is the Android-11 build, while
-/system/lib64/libsoftkeymasterdevice.so and
-/vendor/lib64/hw/android.hardware.keymaster@3.0-impl.so are Android 8.1 blobs.
-keymaster::AuthorizationSet changed layout between those releases, so the mixed
-pair faults the moment an AuthorizationSet crosses the boundary (SIGSEGV in
-AuthorizationSet::Clear from SoftKeymasterContext::CreateKeyBlob, reached from
-AndroidKeymaster::AttestKey - i.e. every lockscreen unlock). A11 dropped the
-keymaster 3.0 default implementation, so the HAL itself cannot be rebuilt from
-source and has to keep the 8.1 ABI.
-
-The legacy namespace searches /system/lib64 before /system/vendor/lib64, so a
-same-named vendor copy can never win; the 8.1 pair therefore gets private names
-and the consumers' DT_NEEDED entries are retargeted at them.
+/system/lib64/libkeymaster_portable.so is the Android-11 build while
+libsoftkeymasterdevice.so and android.hardware.keymaster@3.0-impl.so are
+Android 8.1 blobs, and keymaster::AuthorizationSet changed layout between
+those releases, so the mixed pair faults in AuthorizationSet::Clear on every
+lockscreen unlock. A11 dropped the keymaster 3.0 default implementation, so
+the HAL keeps the 8.1 ABI and the 8.1 pair gets private names - the legacy
+namespace searches /system/lib64 first, so a same-named vendor copy could
+never win - with the consumers' DT_NEEDED retargeted at them.
 
     python3 build_km81_shims.py [--stage DIR] [--only lib|lib64]
 
 Without --stage the artifacts land in prebuilts/livepatch/, which device.mk
-copies into the image; with --stage everything is written into DIR instead,
-leaving the trees untouched, which is what the on-device test uses. The vendor
-tree is only ever read.
+copies into the image; with --stage everything goes into DIR and the trees
+are left untouched. The vendor tree is only ever read.
 """
 import argparse
 import os

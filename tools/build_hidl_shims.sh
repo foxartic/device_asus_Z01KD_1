@@ -1,8 +1,8 @@
 #!/bin/bash
 # Build the libhidltransport/libhwbinder shims Android 11 no longer provides.
-# Android 10 merged both into libhidlbase, but every 8.1 vendor HAL still lists
-# the old names in DT_NEEDED, so their dlopen fails. Each shim exports nothing;
-# it only pulls libhidlbase in, so one HIDL runtime stays in the process.
+# Android 10 merged both into libhidlbase but every 8.1 vendor HAL still lists the
+# old names in DT_NEEDED; each shim exports nothing and only pulls libhidlbase in,
+# so one HIDL runtime stays in the process.
 set -e
 LINEAGE=${LINEAGE:-/home/harry/los18}
 OUT=${OUT:-$LINEAGE/out/target/product/Z01KD_1}

@@ -1,9 +1,8 @@
-# The stock dpmd.rc, with one added line. libdpmframework.so still imports
-# strdup8to16, which Android 11 removed from libcutils, and the blob's DT_NEEDED
-# list cannot be extended in place, so the compat library is preloaded instead.
-# Android 11 also renamed the init keyword: setenv takes exactly two arguments,
-# and an environment line aborts the parse of the whole file, which is what
-# happened here the first time round - init silently dropped the service.
+# The stock dpmd.rc, with one added line: libdpmframework.so still imports
+# strdup8to16, Android 11 dropped it from libcutils, and the blob's DT_NEEDED list
+# cannot be extended in place, so the compat library is preloaded. Note that
+# Android 11's setenv takes exactly two arguments - the stock environment line
+# aborts the parse of the whole file and init drops the service.
 service dpmd /system/bin/dpmd
     class late_start
     setenv LD_PRELOAD /system/lib64/libdpmcompat.so

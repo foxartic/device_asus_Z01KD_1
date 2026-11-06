@@ -57,9 +57,8 @@ TARGET_BOARD_PLATFORM_GPU := qcom-adreno512
 # androidboot.selinux=permissive matches the live device (ro.boot.selinux=permissive).
 # Without it init falls back to enforcing, and this non-Treble port needs
 # permissive for the ASUS proprietary blobs (audio / NFC / RIL).
-# log_buf_len=16M: the WCNSS bring-up messages are all printed in the first two
-# seconds of boot, and the 256 KiB default ring is overwritten before adb comes
-# up, so the icnss/ipc-router trace could never be read from a normal boot.
+# log_buf_len=16M: the WCNSS bring-up messages print in the first two seconds and
+# the 256 KiB default ring is overwritten before adb comes up.
 BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0xc170000 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=1 androidboot.configfs=true androidboot.usbcontroller=a800000.dwc3 androidboot.selinux=permissive icnss.quirks=416 log_buf_len=16M
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 4096
@@ -117,11 +116,9 @@ BOARD_WLAN_DEVICE := qcwcn
 WPA_SUPPLICANT_VERSION := VER_0_8_X
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_qcwcn
-# Deliberately NOT set: WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY would make
-# external/wpa_supplicant_8 install hidl/1.3/android.hardware.wifi.supplicant-
-# service.rc, i.e. a second "service wpa_supplicant" stanza next to the one this
-# device already ships in rootdir/etc/init.qcom.rc (same name, same
-# wpa_wlan0 socket), and init rejects a duplicate service name.
+# Deliberately NOT set: WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY makes
+# external/wpa_supplicant_8 install a second "service wpa_supplicant" stanza next
+# to the one in rootdir/etc/init.qcom.rc, and init rejects a duplicate name.
 
 # Inherit from the proprietary version
 -include vendor/asus/Z01KD_1/BoardConfigVendor.mk

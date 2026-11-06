@@ -1,11 +1,8 @@
     
-# PRODUCT_SHIPPING_API_LEVEL := 26 in lineage_Z01KD_1.mk makes the build treat
-# this as a full-Treble product, so linkerconfig writes an isolated vendor
-# namespace whose permitted_paths stop at /system/vendor. Every 8.1/10 vendor
-# blob then fails to reach libhidlbase and the graphics interface libraries in
-# /system/lib[64]. TARGET_COPY_OUT_VENDOR is system/vendor, so the Treble split
-# is fiction here; selecting the legacy configuration puts /system and the
-# vendor directory in one non-isolated namespace, as it was on Android 10.
+# PRODUCT_SHIPPING_API_LEVEL := 26 makes linkerconfig write an isolated vendor
+# namespace whose permitted_paths stop at /system/vendor, which no 8.1/10 blob
+# can cross. TARGET_COPY_OUT_VENDOR is system/vendor, so the Treble split is
+# fiction here; the legacy configuration keeps /system and vendor in one namespace.
 PRODUCT_FULL_TREBLE_OVERRIDE := false
 
 # Linker namespace: let the vendor namespace resolve platform libs from
@@ -181,10 +178,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     rild.libpath=/vendor/lib64/libril-qc-qmi-1.so
 
-# 1080x1920 at 401 ppi. Nothing in the tree or in the ASUS blobs sets
-# ro.sf.lcd_density on Android 11 - the old init.qcom.early_boot.sh never
-# reaches its set_density_by_fb helper - so SurfaceFlinger falls back to 160
-# dpi and the framework selects the tablet layout.
+# 1080x1920 at 401 ppi. Nothing sets ro.sf.lcd_density - init.qcom.early_boot.sh
+# never reaches set_density_by_fb - so SurfaceFlinger falls back to 160 dpi and
+# the framework selects the tablet layout.
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=420
 
@@ -229,7 +225,7 @@ PRODUCT_PACKAGES += \
     wpa_supplicant \
 
 # The vendor blobs arrive through PRODUCT_COPY_FILES, so the build never learns
-# which HIDL interface libraries their DT_NEEDED entries name. Without these the
+# which HIDL interface libraries their DT_NEEDED entries name; without these the
 # 1.3 Wi-Fi HAL, the CAS service and ipacm fail to dlopen.
 PRODUCT_PACKAGES += \
     android.hardware.cas@1.1 \
@@ -238,58 +234,42 @@ PRODUCT_PACKAGES += \
     android.hardware.wifi@1.2 \
     android.hardware.wifi@1.3
 
-# The Wi-Fi HAL in the vendor blob is an Android 10 binary: it registers IWifi
-# only up to 1.3 and its WifiLegacyHal reads the function table through the 10
-# layout, so handing it the Android 11 libwifi-hal.so leaves its own state
-# inconsistent and it aborts on the first configureChip with
-# "Check failed: global_func_table_.wifi_initialize && !global_handle_ ...".
-# Compiling the HAL here gets Wi-Fi past that point, and @1.4 has to be named
-# because PRODUCT_COPY_FILES never tells the build what a blob's DT_NEEDED wants.
+# The vendor Wi-Fi HAL is an Android 10 binary: it registers IWifi only to 1.3 and
+# reads the function table through the 10 layout, so the Android 11
+# libwifi-hal.so leaves it aborting on the first configureChip. @1.4 has to be
+# named because PRODUCT_COPY_FILES never says what a blob's DT_NEEDED wants.
 PRODUCT_PACKAGES += \
     android.hardware.wifi@1.0-service \
     android.hardware.wifi@1.4
 
-# wpa_supplicant carries the ISupplicant HAL itself in this release, so its
-# DT_NEEDED list names every supplicant interface version it registers. Only
-# @1.0 ever existed on the vendor partition (as a stock blob), so the loader
-# aborted with "android.hardware.wifi.supplicant@1.1.so not found" before
-# main(), Wi-Fi could never be enabled and the 1.0 Wi-Fi HAL stayed idle.
+# wpa_supplicant carries the ISupplicant HAL itself, so its DT_NEEDED names every
+# supplicant version it registers. Only @1.0 ever existed on the vendor partition,
+# so the loader aborted before main() on a missing @1.1.
 PRODUCT_PACKAGES += \
     android.hardware.wifi.supplicant@1.0 \
     android.hardware.wifi.supplicant@1.1 \
     android.hardware.wifi.supplicant@1.2 \
     android.hardware.wifi.supplicant@1.3
 
-# Every binary in the stock fingerprint stack was linked on Android 8.1 and still
-# lists libunwind.so in DT_NEEDED, although none of them imports an unwind
-# symbol. Android 11 stopped installing that library, so gxFpDaemon dies at exec
-# with "library libunwind.so not found" and the sensor never registers.
+# Every binary in the stock fingerprint stack was linked on Android 8.1 and lists
+# libunwind.so in DT_NEEDED without importing an unwind symbol. Android 11
+# stopped installing it, so gxFpDaemon dies at exec.
 PRODUCT_PACKAGES += \
     libunwind
 
-# The stock media.omx@1.0-service binary is an Android-10 build product: its
-# DT_NEEDED names the vendor variant of the minijail helper, whose SONAME is
-# libavservices_minijail_vendor.so. Android 11 still defines that module in
-# frameworks/av/services/minijail/Android.bp but only installs it when a product
-# asks, so the service exec-fails with "library libavservices_minijail_vendor.so
-# not found" and hwservicemanager keeps asking init for IOmx/default forever.
-# That helper needs libminijail.so in turn, and Android 11 installs only the
-# 64-bit platform copy. /linkerconfig/ld.config.txt puts /system/${LIB} first in
-# the default namespace, so the 32-bit OMX binary looks for
-# /system/lib/libminijail.so, misses, and init restarts the service forever -
-# the stack that hangs mediaserver on MediaCodecList::getLocalInstance() and lets
-# the watchdog kill system_server whenever the UI plays a charging sound.
-# Asking for the module installs both multilib variants.
+# The stock media.omx@1.0-service is an Android 10 build product: its DT_NEEDED
+# names libavservices_minijail_vendor.so, which Android 11 defines but only
+# installs on request, and libminijail.so, of which it installs only the 64-bit
+# copy. The 32-bit service therefore exec-fails and mediaserver hangs in
+# MediaCodecList::getLocalInstance(). Asking for the module installs both
+# multilib variants.
 PRODUCT_PACKAGES += \
     libavservices_minijail_vendor \
     libminijail
 
-# dpmserviceapp and qcrilmsgtunnel use the Qualcomm DPM/izat classes directly,
-# with no <uses-library> in their manifests, so those jars have to be on the boot
-# classpath. Without it DpmServiceApp.onCreate dies on
-# NoClassDefFoundError: Lcom/qti/location/sdk/IZatManager and the persistent
-# process .dataservices is restarted about six times a second, which also rotates
-# the console log before the icnss boot trace can be read. The modules are
+# dpmserviceapp and qcrilmsgtunnel use the Qualcomm DPM/izat classes directly, with
+# no <uses-library>, so those jars have to be on the boot classpath or the
+# persistent .dataservices process crash-loops on NoClassDefFoundError. They are
 # Soong java_import in vendor/asus/Z01KD_1/Android.bp because java.mk rejects a
 # PRODUCT_BOOT_JARS entry defined by an Android.mk.
 PRODUCT_BOOT_JARS += \
@@ -299,75 +279,48 @@ PRODUCT_BOOT_JARS += \
     izat.xt.srv \
     qcrilhook
 
-# qcrilmsgtunnel dies at service creation with
-# NoClassDefFoundError: Landroid/hidl/base/V1_0/IBase; (QcrilMsgTunnelIfaceManager
-# .java:73). Android 11 installs android.hidl.base-V1.0-java.jar and
-# android.hidl.manager-V1.0-java.jar but only exposes them through <library> entries
-# in /system/etc/permissions/platform.xml, which reach an app only if that app
-# declares <uses-library>. The 8.0 Qualcomm APK declares nothing, so the classes are
-# invisible to it; Android 8.x had these jars on the boot classpath instead. The
-# device-owned name exists because soong rejects the real module names as framework
-# boot jars - they resolve into the updatable wifi/tethering apexes.
+# qcrilmsgtunnel dies at service creation on NoClassDefFoundError for
+# android.hidl.base.V1_0.IBase: Android 11 exposes those jars only through
+# <library> entries and the 8.0 Qualcomm APK declares none. The device-owned name
+# exists because soong refuses the real module names as framework boot jars - they
+# resolve into the updatable wifi/tethering apexes.
 PRODUCT_BOOT_JARS += device-hidl-java-compat
 
 # dpmd has the same problem one layer down: libdpmframework.so imports
-# strdup8to16, which Android 11 removed from libcutils, so the daemon exec-fails
-# with "cannot locate symbol strdup8to16" and init restarts it continuously.
-# compat/ rebuilds that single symbol to the contract read out of the Android 9
-# libcutils disassembly. The blob's DT_NEEDED list has no spare entry to point at
-# it, so the stock dpmd.rc is overridden here to preload it, and the vendor/asus
-# line that copied the original has been deleted.
+# strdup8to16, which Android 11 removed from libcutils, so the daemon exec-fails.
+# compat/ rebuilds that symbol, and because the blob's DT_NEEDED list has no spare
+# entry the stock dpmd.rc is overridden here to preload it.
 PRODUCT_PACKAGES += \
     libdpmcompat
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/init/dpmd.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/dpmd.rc
 
-# The same class of failure one layer further down: libsettings.so is an 8.1
-# blob, pulled in by libril-qc-qmi-1.so, libril-qc-hal-qmi.so and
-# libqcrilFramework.so, and it was linked against protobuf 3.6. Android 11
-# ships protobuf 3.9.1, which dropped sixteen of the symbols that blob imports
-# (readelf over the staged image: empty_string_, InitEmptyString,
-# empty_string_once_init_, GoogleOnceInitImpl, UnknownFieldSet, Arena and the
-# GeneratedMessageReflection factory), so every rild instance exits 1 within
-# 45 ms of init starting it and qcrilmsgtunnel keeps dialing a rild2 socket
-# that never exists. libwvhidl.so and libwvdrmengine.so hit the same wall on the
-# widevine side, with the lite symbol set.
-#
-# LD_PRELOAD cannot carry this: init keeps the first definition it sees of a
-# service and drops later ones, and ril-daemon is defined both by hardware/ril's
-# rild.legacy.rc and by the vendor rild.rc, so which setenv line survives depends
-# on the order that directory happens to be read in - the live process ends up
-# with rild.legacy.rc's, which has no preload at all. The five blobs now import a
-# private name instead: tools/patchdeps.py rewrites their DT_NEEDED to
-# libprotobuf_v37full.so, which only the Android 10 VNDK (protobuf 3.7.1) build
-# answers to. The name has to be private because
-# /system/lib64/libprotobuf-cpp-full.so is Android 11's 3.9.1 and the legacy
-# namespace searches /system/lib64 before /vendor/lib64, so a same-named vendor
-# copy can never win. One library per arch covers both groups, because the full
-# build also exports the lite symbol set. Verified on device with LD_PRELOAD
-# removed everywhere: rild and its second slot stay running and widevine links.
+# libsettings.so, pulled in by libril-qc-qmi-1.so, libril-qc-hal-qmi.so and
+# libqcrilFramework.so, and the widevine blobs were linked against protobuf 3.6.
+# Android 11 ships 3.9.1, which dropped symbols they import, so every rild exits
+# within milliseconds of starting. LD_PRELOAD cannot carry this: init keeps the
+# first definition it sees of ril-daemon and hardware/ril's rild.legacy.rc has no
+# preload, so tools/patchdeps.py retargets their DT_NEEDED at a private
+# libprotobuf_v37full.so - a same-named vendor copy would lose, because the
+# legacy namespace searches /system/lib64 before /vendor/lib64.
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libprotobuf_v37full.so:system/vendor/lib64/libprotobuf_v37full.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib/libprotobuf_v37full.so:system/vendor/lib/libprotobuf_v37full.so
 
 # Android 11's BatteryService asks for android.hardware.health@2.0 and aborts
-# system_server when no such service is registered, so the 1.0 blob alone
-# boot-loops. The 2.1 service is the binderized wrapper around the 2.1
-# passthrough impl; the 2.0 -impl-default module is the recovery-only variant
-# and would fail the castFrom in the 2.1 service.
+# system_server when nothing registers it, so the 1.0 blob alone boot-loops. The
+# 2.1 service wants the 2.1 passthrough impl; the 2.0 -impl-default is
+# recovery-only and fails the service's castFrom.
 PRODUCT_PACKAGES += \
     android.hardware.health@2.1-impl \
     android.hardware.health@2.1-service
 
-# Android 11's vold takes its global binder mutex in needsCheckpoint() and then
-# calls IBootControl::getService(), which waits for a registration that never
-# happens here. StorageManagerService.start() blocks in connectVold() on the
-# other side of that mutex, so the watchdog kills system_server about every
-# 103 s and the boot animation never finishes. hardware/interfaces/boot/1.1
-# cannot serve this device (BootControl::Init returns false without
-# ro.boot.slot_suffix) and the 1.0 default impl needs a QCOM bootctrl module,
-# so the dt-local hardware/boot service answers the single-slot state instead.
+# Android 11's vold calls IBootControl::getService() while holding its global
+# binder mutex, so StorageManagerService.start() blocks on the other side of it
+# and the watchdog kills system_server about every 103 s. interfaces/boot/1.1
+# needs ro.boot.slot_suffix and the 1.0 impl needs a QCOM bootctrl module, so the
+# dt-local hardware/boot service answers the single-slot state instead.
 PRODUCT_PACKAGES += \
     android.hardware.boot@1.0-service-z01kd
 
@@ -393,21 +346,17 @@ PRODUCT_PACKAGES += \
 # tools/parcel_abi.py (42 and 2 functions). The home key additionally needs
 # configs/keylayout/goodixfp.kl to drop the FINGERPRINT_* labels 10 cannot
 # parse.
-# The deps entries are 8.1-era HAL binaries whose DT_NEEDED on libbase.so was
-# rewritten to the private libbs81.so with tools/patchdeps.py; three come from
-# the vendor tree, the omx service is an Android-10 build product, and the
-# 64-bit libbs81.so has no build rule at all. The halenv entries are the
-# matching /vendor/etc/init overrides, each adding only the LD_LIBRARY_PATH
-# (composer: LD_PRELOAD) line that makes the private copy win over the
-# Android-10 /system one. nfc is the libnfc-nci.conf that the Android-10 NXP
-# stack parses and the build ships none.
-# keymaster is the same trick for the 8.1 HAL: A11 deleted the keymaster 3.0
-# default implementation, so @3.0-impl.so stays an 8.1 blob, but its two
-# libraries resolve to the A11 /system/lib64 copies. keymaster::
-# AuthorizationSet changed layout between 8.1 and A11, so attestKey faults
-# in AuthorizationSet::Clear on every unlock. libkeymport81.so and
-# libsoftkeym81.so are the 8.1 pair under private sonames and the impl's
-# DT_NEEDED points at them; regenerate with tools/build_km81_shims.py.
+# The deps entries are 8.1-era HAL binaries retargeted by tools/patchdeps.py at
+# private copies (libbs81.so, libtxysys.so, libprotobuf_v37full.so); the halenv
+# entries are the /vendor/etc/init overrides whose LD_LIBRARY_PATH or LD_PRELOAD
+# makes the private copy win over the Android-10 /system one. nfc is the
+# libnfc-nci.conf the Android-10 NXP stack parses and the build ships none.
+# keymaster gets the same treatment: A11 deleted the keymaster 3.0 default impl,
+# so @3.0-impl.so stays an 8.1 blob, but its two libraries would resolve to the
+# A11 copies, and keymaster::AuthorizationSet changed layout between the releases
+# - attestKey faults in AuthorizationSet::Clear on every unlock.
+# tools/build_km81_shims.py builds the private-soname 8.1 pair and retargets the
+# impl's DT_NEEDED at it.
 # The matching lines in vendor/asus/Z01KD_1/Z01KD_1-vendor.mk are deleted so the
 # stock blob cannot win the duplicate-destination race in PRODUCT_COPY_FILES.
 PRODUCT_COPY_FILES += \
@@ -453,11 +402,10 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/init/vendor.qti.gnss@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.qti.gnss@1.0-service.rc \
     $(LOCAL_PATH)/prebuilts/livepatch/etc/libnfc-nci.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-nci.conf
 
-# Android 10 merged libhidltransport and libhwbinder into libhidlbase and
-# Android 11 ships only empty stubs for the old names, so every 8.1 vendor HAL
-# that still lists them in DT_NEEDED fails to dlopen. These two shims export
-# nothing and simply pull in libhidlbase, which keeps one HIDL runtime per
-# process. Build them with tools/build_hidl_shims.sh after a full build.
+# Android 10 merged libhidltransport and libhwbinder into libhidlbase and Android
+# 11 ships only empty stubs under the old names, so every 8.1 vendor HAL that still
+# lists one fails to dlopen. Build the shims with tools/build_hidl_shims.sh after
+# a full build.
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/livepatch/lib64/libhidltransport.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libhidltransport.so \
     $(LOCAL_PATH)/prebuilts/livepatch/lib64/libhwbinder.so:$(TARGET_COPY_OUT_VENDOR)/lib64/libhwbinder.so \

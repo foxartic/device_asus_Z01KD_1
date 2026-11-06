@@ -33,8 +33,8 @@ using android::hardware::boot::V1_0::BoolResult;
 using android::hardware::boot::V1_0::CommandResult;
 using android::hardware::boot::V1_0::IBootControl;
 
-// This device is single-slot: the bootloader has no A/B metadata, so the
-// answers below are constants rather than reads of the misc partition.
+// Single-slot device: the bootloader has no A/B metadata, so these are
+// constants rather than reads of the misc partition.
 class Z01KDBootControl : public IBootControl {
   public:
     Return<uint32_t> getNumberSlots() override { return 1; }
@@ -66,8 +66,8 @@ class Z01KDBootControl : public IBootControl {
         return slot == 0 ? BoolResult::TRUE : BoolResult::INVALID_SLOT;
     }
 
-    // A single-slot boot image carries no slot suffix, and callers such as
-    // vold's rollback check only compare it against a stored suffix.
+    // A single-slot image carries no suffix; callers only compare it
+    // against a stored suffix.
     Return<void> getSuffix(uint32_t slot, getSuffix_cb cb) override {
         cb("");
         return Void();

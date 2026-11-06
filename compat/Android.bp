@@ -12,15 +12,10 @@ cc_library_shared {
 }
 
 // qcrilmsgtunnel (an 8.0-era Qualcomm APK) resolves android.hidl.base.V1_0.IBase
-// through the boot classpath, which Android 8.x shipped and Android 11 does
-// not: A11 only exposes those jars through <library> entries, and the APK declares
-// no <uses-library>, so the classes stay invisible to it. They cannot simply be put
-// back on PRODUCT_BOOT_JARS under their own names, because soong resolves those
-// module names into the updatable com.android.wifi / com.android.tethering apexes
-// and refuses them as framework boot jars (build/soong/java/dexpreopt_bootjars.go).
-// A device-owned java_library that merges the two stub jars keeps the boot-jar slot
-// out of that apex lookup; the same static_libs pair is what
-// vendor/codeaurora/telephony/qti-hidl-wrapper uses for its system_ext library.
+// from the boot classpath, which Android 8.x shipped and Android 11 exposes only
+// through <uses-library>. A device-owned name keeps the boot-jar slot out of the
+// apex lookup, because soong resolves the real module names into the updatable
+// com.android.wifi / com.android.tethering apexes and refuses them as boot jars.
 java_library {
     name: "device-hidl-java-compat",
     installable: true,

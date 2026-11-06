@@ -9,11 +9,9 @@ RULES = [
     (b"libbase.so", b"libbs81.so"),
     (b"android.hardware.gnss@1.0.so", b"android.hardware.gnss@18.so"),
     (b"android.hardware.audio.common@2.0.so", b"android.hardware.audio.common81.so"),
-    # A11's /system/lib64/libprotobuf-cpp-{full,lite}.so is 3.9.1 and dropped the
-    # pre-3.7 symbols these 8.1 blobs import, and the legacy namespace searches
-    # /system/lib64 before /vendor/lib64, so a same-named vendor copy can never win.
-    # Both names retarget to one private 3.7.1 library (the full build exports the
-    # lite symbol set too).
+    # Android 11's 3.9.1 protobuf dropped the pre-3.7 symbols these 8.1 blobs
+    # import, and the legacy namespace searches /system/lib64 before
+    # /vendor/lib64, so both names retarget to one private 3.7.1 copy.
     (b"libprotobuf-cpp-full.so", b"libprotobuf_v37full.so"),
     (b"libprotobuf-cpp-lite.so", b"libprotobuf_v37full.so"),
 ]

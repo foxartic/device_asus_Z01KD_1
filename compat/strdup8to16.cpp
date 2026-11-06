@@ -1,11 +1,7 @@
-// strdup8to16() was part of libcutils until Android 11 deleted it. The stock
-// libdpmframework.so blob still imports it, so without this dpmd cannot even be
-// exec'd ("cannot locate symbol strdup8to16 referenced by /system/lib64/libdpm-
-// framework.so") and init restarts it forever.
-//
-// The contract is the one the Android 9 libcutils exported, read out of its
-// disassembly: the caller gets a malloc'd buffer of exactly len16 char16_t
-// units (no terminator) and the unit count through the second argument.
+// strdup8to16() was part of libcutils until Android 11 deleted it, but
+// libdpmframework.so still imports it, so dpmd cannot even be exec'd. The
+// contract is the Android 9 one: a malloc'd buffer of exactly len16 char16_t
+// units, no terminator, with the unit count passed through the second argument.
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -14,8 +10,8 @@ namespace {
 
 constexpr uint32_t kMinCodePoint[] = {0, 0, 0x80, 0x800, 0x10000};
 
-// Walks one modified UTF-8 string, counting units when dst is null and
-// filling the buffer otherwise, so the two passes cannot disagree.
+// Counts units when dst is null and fills the buffer otherwise, so the
+// two passes cannot disagree.
 size_t convert(const char* src, char16_t* dst) {
     const uint8_t* s = reinterpret_cast<const uint8_t*>(src);
     size_t units = 0;
@@ -47,13 +43,12 @@ size_t convert(const char* src, char16_t* dst) {
             }
             cp = (cp << 6) | (cont & 0x3f);
         }
-        // C0 80 is how modified UTF-8 spells U+0000, so it stays legal even
-        // though it is an overlong form.
+        // C0 80 is how modified UTF-8 spells U+0000.
         bool valid = len != 0 && cp <= 0x10ffff && (cp >= kMinCodePoint[len] || cp == 0);
 
         if (valid && len == 3 && cp >= 0xd800 && cp <= 0xdbff) {
-            // A non-BMP character arrives as a surrogate pair written into two
-            // 3-byte sequences, so the high half is followed by its low half.
+            // A non-BMP character arrives as a surrogate pair written
+            // into two 3-byte sequences.
             uint8_t second = s[i + 3];
             if (second == 0xed && (s[i + 4] & 0xf0) == 0xb0 && (s[i + 5] & 0xc0) == 0x80) {
                 if (dst != nullptr) {

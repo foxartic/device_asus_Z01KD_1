@@ -1,20 +1,19 @@
 # AOSP only labels the stock android.hardware.{bluetooth,nfc,wifi}@1.x-service
-# names. The ASUS blobs use different file names, so they fall back to
-# vendor_file and init never leaves its own domain for them.
+# names; the ASUS blobs use other file names, fall back to vendor_file and init
+# never leaves its own domain for them.
 /(vendor|system/vendor)/bin/hw/android\.hardware\.bluetooth@1\.0-service-qti u:object_r:hal_bluetooth_default_exec:s0
 /(vendor|system/vendor)/bin/hw/vendor\.nxp\.hardware\.nfc@1\.0-service      u:object_r:hal_nfc_default_exec:s0
 /(vendor|system/vendor)/bin/gxFpDaemon                                      u:object_r:gx_fpd_exec:s0
 
-# AOSP labels only the exact android.hardware.boot@1.x-service file names, so
-# the dt-local bootctl needs its own. Unlabeled it is vendor_file, init execs
-# it without transitioning to hal_bootctl_default, and the missing IBootControl
-# registration leaves vold blocked in needsCheckpoint().
+# AOSP labels only the exact android.hardware.boot@1.x-service file names, so the
+# dt-local bootctl needs its own: as vendor_file init execs it without
+# transitioning to hal_bootctl_default and the missing IBootControl registration
+# leaves vold blocked in needsCheckpoint().
 /(vendor|system/vendor)/bin/hw/android\.hardware\.boot@1\.0-service-z01kd u:object_r:hal_bootctl_default_exec:s0
 
 # e2fsdroid needs a label for every path in the image, including the six ASUS
-# firmware mountpoints baked at the root. AOSP labels its own root mountpoints
-# (bin, etc, sdcard, charger) rootfs, so they get the same; a mount hides the
-# label at boot. Without this the build dies on
+# firmware mountpoints baked at the root; AOSP labels its own root mountpoints
+# rootfs and the mount hides the label at boot. Without these the build dies on
 # "No such file or directory searching for label /asusfw".
 /asusfw(/.*)?      u:object_r:rootfs:s0
 /bt_firmware(/.*)? u:object_r:rootfs:s0

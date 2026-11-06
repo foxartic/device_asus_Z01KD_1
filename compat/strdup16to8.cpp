@@ -17,12 +17,9 @@
  */
 
 // Android 11 deleted the libcutils UTF-16/UTF-8 helpers along with String8 and
-// String16. The stock libdpmframework.so blob still imports strdup8to16 and
-// strndup16to8, so dpmd cannot be exec'd and init restarts it every few seconds.
-// This is the Android 9 implementation, kept byte-for-byte in the parts that
-// decide the contract: a caller that only reads the returned buffer must see the
-// same terminator and the same "0xc0 0x80" spelling of an embedded NUL that the
-// blob was linked against.
+// String16. libdpmframework.so still imports strdup8to16 and strndup16to8, so
+// dpmd cannot be exec'd. This is the Android 9 implementation, including its
+// terminator and its 0xc0 0x80 spelling of an embedded NUL.
 
 #include <stddef.h>
 #include <stdint.h>
