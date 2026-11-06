@@ -285,6 +285,10 @@ PRODUCT_BOOT_JARS += \
 # exists because soong refuses the real module names as framework boot jars - they
 # resolve into the updatable wifi/tethering apexes.
 PRODUCT_BOOT_JARS += device-hidl-java-compat
+# A soong java_library named only in PRODUCT_BOOT_JARS is dexpreopted but never
+# installed, and a missing BCP jar makes zygote reject the boot image extension
+# and re-verify services.jar on every boot.
+PRODUCT_PACKAGES += device-hidl-java-compat
 
 # dpmd has the same problem one layer down: libdpmframework.so imports
 # strdup8to16, which Android 11 removed from libcutils, so the daemon exec-fails.
