@@ -81,9 +81,16 @@ on post-fs
 on post-fs
     exec - root root -- /system/bin/sh /sbin/mntdump.sh
 
-# v4i delayed diagnostic dump, run through late_start 30 s after boot.
+# v4i delayed diagnostic dump (bring-up). Disabled by default: it loops for
+# ~320s and writes logcat+dmesg to /cache every 8s, which adds post-boot I/O.
+# Enable temporarily for debugging with:
+#   setprop persist.vendor.z01kd.diag_dump 1 && start diag
 service diag /system/bin/sh /sbin/diag.sh
     class late_start
     user root
     group root
+    disabled
     oneshot
+
+on property:persist.vendor.z01kd.diag_dump=1
+    start diag

@@ -11,6 +11,12 @@ PRODUCT_FULL_TREBLE_OVERRIDE := false
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/ld.config.29.txt:$(TARGET_COPY_OUT_SYSTEM)/etc/ld.config.29.txt
 
+# MindTheGapps drops no whitelist of its own here and ro.control_privapp_permissions
+# is enforce, so an unlisted signature|privileged request aborts system_server from
+# PermissionManagerService.systemReady before any app process starts.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/privapp-permissions-google.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-google.xml
+
 # Audio
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
@@ -186,7 +192,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # NFC: NfcNci is never pulled in by the non-Treble product, and the NXP
 # module is installed under its instance name while the AOSP impl loads
-# the default variant
+# the default variant.
 PRODUCT_PACKAGES += \
     NfcNci
 
@@ -530,7 +536,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.radio@1.1.so:system/vendor/lib64/android.hardware.radio@1.1.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hardware.wifi@1.0.so:system/vendor/lib64/android.hardware.wifi@1.0.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/android.hidl.base@1.0.so:system/vendor/lib64/android.hidl.base@1.0.so \
-    $(LOCAL_PATH)/prebuilts/system/vendor/lib64/hw/nfc_nci.default.so:system/vendor/lib64/hw/nfc_nci.default.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libbinder.so:system/vendor/lib64/libbinder.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libcap.so:system/vendor/lib64/libcap.so \
     $(LOCAL_PATH)/prebuilts/system/vendor/lib64/libhardware_legacy.so:system/vendor/lib64/libhardware_legacy.so \
@@ -619,6 +624,12 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # (dumpsys SurfaceFlinger "GLES:" line), which is 0x30002.
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196610 \
+
+# There is no USB gadget HAL in the ASUS blob set, so UsbDeviceManager keeps its legacy
+# handler and takes the boot composition from this property. Left at adb it enumerates no
+# MTP function, and the Settings picker cannot offer one either because that page needs
+# port status from the same missing HAL.
+PRODUCT_PROPERTY_OVERRIDES += persist.sys.usb.config=mtp
 
 # Inherit vendor
 $(call inherit-product, vendor/asus/Z01KD_1/Z01KD_1-vendor.mk)
