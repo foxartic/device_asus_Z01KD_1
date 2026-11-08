@@ -211,6 +211,14 @@ case "$target" in
 	;;
 esac
 
+# Wait for dwc3 UDC to register before setting sys.usb.config,
+# otherwise the configfs gadget binding races with dwc3 probe.
+udc_wait=50
+while [ $udc_wait -gt 0 ] && [ ! -d /sys/class/udc/a800000.dwc3 ]; do
+    sleep 0.1
+    udc_wait=$((udc_wait - 1))
+done
+
 # check configfs is mounted or not
 if [ -d /config/usb_gadget ]; then
 	# Chip-serial is used for unique MSM identification in Product string
