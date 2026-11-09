@@ -59,7 +59,11 @@ TARGET_BOARD_PLATFORM_GPU := qcom-adreno512
 # permissive for the ASUS proprietary blobs (audio / NFC / RIL).
 # log_buf_len=16M: the WCNSS bring-up messages print in the first two seconds and
 # the 256 KiB default ring is overwritten before adb comes up.
-BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0xc170000 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=1 androidboot.configfs=true androidboot.usbcontroller=a800000.dwc3 androidboot.selinux=permissive icnss.quirks=416 log_buf_len=16M
+# quiet, without earlycon or user_debug: with a console=ttyMSM0 the kernel writes every
+# printk synchronously to a 115200 UART, and the measured boot window emits 1.39 MB,
+# about 120 s of serial time. quiet only silences the console, the 16M ring buffer
+# still holds the records for dmesg over adb.
+BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 quiet androidboot.hardware=qcom msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=1 androidboot.configfs=true androidboot.usbcontroller=a800000.dwc3 androidboot.selinux=permissive icnss.quirks=416 log_buf_len=16M
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 4096
 BOARD_RAMDISK_OFFSET := 0x01000000
