@@ -250,15 +250,10 @@
             <instance>default</instance>
         </interface>
     </hal>
-    <hal format="hidl">
-        <name>android.hardware.usb</name>
-        <transport>hwbinder</transport>
-        <version>1.0</version>
-        <interface>
-            <name>IUsb</name>
-            <instance>default</instance>
-        </interface>
-    </hal>
+    <!-- USB HAL is declared by the fragment installed with the
+         android.hardware.usb@1.0-service package. Declaring it here as well
+         makes libvintf reject the whole device manifest on merge (duplicate
+         HAL), which in turn makes getTransport() return EMPTY for every HAL. -->
     <hal format="hidl">
         <name>android.hardware.vibrator</name>
         <transport>hwbinder</transport>

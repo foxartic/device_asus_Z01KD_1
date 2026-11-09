@@ -160,6 +160,13 @@ PRODUCT_PACKAGES += \
     vendor_rfs_tree \
     root_mount_dirs \
 
+# USB: this package installs both the HAL service and its VINTF fragment
+# (/vendor/etc/vintf/manifest/android.hardware.usb@1.0-service.xml). Do not
+# also declare android.hardware.usb in manifest.xml: the duplicate makes
+# libvintf reject the entire device manifest.
+PRODUCT_PACKAGES += \
+    android.hardware.usb@1.0-service
+
 # Audio: legacy policy manager config + speaker amp/route libs from stock
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio/audio_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy.conf \
