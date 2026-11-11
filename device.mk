@@ -636,7 +636,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # handler and takes the boot composition from this property. Left at adb it enumerates no
 # MTP function, and the Settings picker cannot offer one either because that page needs
 # port status from the same missing HAL.
-PRODUCT_PROPERTY_OVERRIDES += persist.sys.usb.config=mtp
+PRODUCT_PROPERTY_OVERRIDES += persist.sys.usb.config=adb,mtp
+PRODUCT_PROPERTY_OVERRIDES += ro.adb.secure=0
 
 # Inherit vendor
 $(call inherit-product, vendor/asus/Z01KD_1/Z01KD_1-vendor.mk)

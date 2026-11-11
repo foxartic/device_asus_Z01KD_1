@@ -102,6 +102,10 @@ BOARD_VNDK_VERSION := current
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 
+# Allow adb without authentication for debugging (device ships with no USB
+# gadget HAL, so usb.config is set in device.mk).
+ADDITIONAL_DEFAULT_PROPERTIES += ro.adb.secure=0 persist.sys.usb.config=adb,mtp
+
 # Audio
 # Android 10 dropped the legacy .conf audio policy format; the XML policy
 # (configs/audio/audio_policy_configuration.xml) is the only supported path.
