@@ -64,4 +64,5 @@ service energy-awareness /system/vendor/bin/energy-awareness
     user system
     group system
     oneshot
+
 import /vendor/etc/init/hw/init.asus.rc
