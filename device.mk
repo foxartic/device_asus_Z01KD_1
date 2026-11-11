@@ -632,11 +632,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196610 \
 
-# There is no USB gadget HAL in the ASUS blob set, so UsbDeviceManager keeps its legacy
-# handler and takes the boot composition from this property. Left at adb it enumerates no
-# MTP function, and the Settings picker cannot offer one either because that page needs
-# port status from the same missing HAL.
-PRODUCT_PROPERTY_OVERRIDES += persist.sys.usb.config=adb
+# There is no USB gadget HAL in the ASUS blob set, so UsbDeviceManager falls back
+# to UsbHandlerLegacy, which drives configfs through sys.usb.config. The blocks in
+# init.asus.usb.rc only match the "mtp,adb" / "ptp,adb" compositions, so order
+# matters: "adb,mtp" matches nothing and leaves the device unenumerated.
+PRODUCT_PROPERTY_OVERRIDES += persist.sys.usb.config=mtp,adb
 PRODUCT_PROPERTY_OVERRIDES += ro.adb.secure=0
 
 # Inherit vendor
