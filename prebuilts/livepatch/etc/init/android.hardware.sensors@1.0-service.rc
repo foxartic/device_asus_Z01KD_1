@@ -1,5 +1,10 @@
+# The prebuilt 8.0 sensors.ssc.so pulls in the old vendor libbinder.so, which
+# references android::CallStack.  In Android 11 CallStack moved from libutils.so
+# to libutilscallstack.so, so preload it to resolve the symbol.  Otherwise
+# dlopen(sensors.ssc.so) fails and only the ALSPS (light/prox) HAL loads.
 service sensors-hal-1-0 /vendor/bin/hw/android.hardware.sensors@1.0-service
     setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw
+    setenv LD_PRELOAD /system/lib64/libutilscallstack.so
     class hal
     user system
     group system wakelock input
