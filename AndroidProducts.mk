@@ -14,9 +14,14 @@
 # limitations under the License.
 #
 
+# lineage_* is the LineageOS product; arrow_* is the ArrowOS product.
+# Only the selected one is inherited, so both can live in this tree.
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/lineage_Z01KD_1.mk
+    $(LOCAL_DIR)/lineage_Z01KD_1.mk \
+    $(LOCAL_DIR)/arrow_Z01KD_1.mk
 
 COMMON_LUNCH_CHOICES := \
     lineage_Z01KD_1-userdebug \
-    lineage_Z01KD_1-eng
+    lineage_Z01KD_1-eng \
+    arrow_Z01KD_1-userdebug \
+    arrow_Z01KD_1-eng
