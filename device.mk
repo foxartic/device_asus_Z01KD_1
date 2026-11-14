@@ -255,6 +255,15 @@ PRODUCT_PACKAGES += \
     android.hardware.wifi@1.0-service \
     android.hardware.wifi@1.4
 
+# The same Android 8.1 Wi-Fi HAL lists libnl.so in DT_NEEDED. Android 11 ships
+# libnl only inside the VNDK apex, and the legacy default namespace
+# (ro.board.first_api_level=26) does not search the apex, so the loader aborts
+# before main() with "library libnl.so not found". The Wi-Fi HAL then never
+# registers, and BatteryExternalStatsWorker's synchronous getSupportedFeatures()
+# call blocks BatteryStatsService.syncStats(), which ANRs SystemUI on
+# getStatisticsStream() (black home, no status bar). Install the system copy.
+PRODUCT_PACKAGES += libnl
+
 # wpa_supplicant carries the ISupplicant HAL itself, so its DT_NEEDED names every
 # supplicant version it registers. Only @1.0 ever existed on the vendor partition,
 # so the loader aborted before main() on a missing @1.1.
